@@ -140,6 +140,7 @@ export const loginUser = catchAsync(async (req, res, next) => {
       username: user.username,
       email: user.email,
       role: user.role,
+      profilePicUrl: user.profilePicUrl,
     },
   });
 });
@@ -189,7 +190,7 @@ export const googleAuth = catchAsync(async (req, res, next) => {
 
   const payload = ticket.getPayload();
 
-  const { sub: googleId, email, name, email_verified } = payload;
+  const { sub: googleId, email, name, picture, email_verified } = payload;
 
   if (!email_verified) {
     return next(new AppError("Google email not verified", 400));
@@ -210,6 +211,7 @@ export const googleAuth = catchAsync(async (req, res, next) => {
       googleId,
       authProvider: "google",
       isEmailVerified: true,
+      profilePicUrl: picture,
     });
   }
 

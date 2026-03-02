@@ -41,6 +41,53 @@ const DeliveryRatingSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+DeliveryRatingSchema.statics.calcAverageRatings = async function (
+  deliveryPersonId,
+) {
+  const stats = await this.aggregate([
+    {
+      $match: { deliveryPersonId: deliveryPersonId },
+    },
+    {
+      $group: {
+        _id: "$deliveryPersonId",
+        avgRating: { $avg: "$rating" },
+        totalRatings: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const DeliveryPerson = mongoose.model("DeliveryPerson");
+
+  if (stats.length > 0) {
+    await DeliveryPerson.findByIdAndUpdate(deliveryPersonId, {
+      averageRating: Math.round(stats[0].avgRating * 10) / 10,
+      totalReviews: stats[0].totalRatings,
+    });
+  } else {
+    await DeliveryPerson.findByIdAndUpdate(deliveryPersonId, {
+      averageRating: 0,
+      totalReviews: 0,
+    });
+  }
+};
+
+DeliveryRatingSchema.post("save", function () {
+  this.constructor.calcAverageRatings(this.deliveryPersonId);
+});
+
+DeliveryRatingSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    await doc.constructor.calcAverageRatings(doc.deliveryPersonId);
+  }
+});
+
+DeliveryRatingSchema.post("findOneAndUpdate", async function (doc) {
+  if (doc) {
+    await doc.constructor.calcAverageRatings(doc.deliveryPersonId);
+  }
+});
+
 DeliveryRatingSchema.index(
   { userId: 1, deliveryPersonId: 1, orderId: 1 },
   { unique: true },

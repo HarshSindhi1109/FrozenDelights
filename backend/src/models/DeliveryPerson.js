@@ -137,6 +137,8 @@ DeliveryPersonSchema.methods.toSafeObject = function () {
   };
 };
 
+DeliveryPersonSchema.index({ userId: 1 });
+
 const DeliveryPerson = mongoose.model("DeliveryPerson", DeliveryPersonSchema);
 
 export default DeliveryPerson;

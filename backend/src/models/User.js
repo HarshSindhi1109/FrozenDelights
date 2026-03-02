@@ -17,6 +17,11 @@ const UserSchema = new mongoose.Schema(
       unique: true,
     },
 
+    profilePicUrl: {
+      type: String,
+      default: "",
+    },
+
     authProvider: {
       type: String,
       enum: ["local", "google"],
