@@ -27,8 +27,19 @@ import flavourRoutes from "./routes/flavourRoutes.js";
 import iceCreamRoutes from "./routes/iceCreamRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import { startDailyPayoutJob } from "./jobs/dailyPayoutJob.js";
+import { razorpayWebhook } from "./controllers/webhookController.js";
+import deliveryEarningRoutes from "./routes/deliveryEarningRoutes.js";
+import dailyPayoutRoutes from "./routes/dailyPayoutRoutes.js";
 
 const app = express();
+
+// webhook route must come before express.json() and also be isolated
+app.post(
+  "/api/v1/webhook/razorpay",
+  express.raw({ type: "application/json" }),
+  razorpayWebhook,
+);
 
 app.use(helmet());
 
@@ -59,6 +70,8 @@ app.use("/api/v1/flavours", flavourRoutes);
 app.use("/api/v1/ice-creams", iceCreamRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/delivery-earnings", deliveryEarningRoutes);
+app.use("/api/v1/daily-payouts", dailyPayoutRoutes);
 
 // Images can be accessed by browser
 app.use("/uploads", express.static("uploads"));
@@ -79,6 +92,8 @@ const __dirname = path.dirname(__filename);
 const startServer = async () => {
   try {
     await connectDB();
+
+    startDailyPayoutJob();
 
     if (!fs.existsSync(path.join(__dirname, "../key.pem"))) {
       console.error("SSL files not found");

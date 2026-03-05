@@ -67,7 +67,7 @@ DeliveryEarningSchema.pre("save", function (next) {
     (this.surgeBonus || 0) +
     (this.tipAmount || 0);
 
-  if (this.totalEarning !== calculatedTotal) {
+  if (Math.abs(calculatedTotal - this.totalEarning) > 0.01) {
     return next(new Error("Total earning mismatch!!!"));
   }
 
@@ -79,6 +79,10 @@ DeliveryEarningSchema.index(
   { unique: true },
 );
 DeliveryEarningSchema.index({ deliveryPersonId: 1, isSettled: 1 });
+DeliveryEarningSchema.index({
+  earningDate: 1,
+  isSettled: 1,
+});
 
 const DeliveryEarning = mongoose.model(
   "DeliveryEarning",

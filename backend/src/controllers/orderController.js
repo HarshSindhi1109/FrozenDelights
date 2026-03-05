@@ -3,6 +3,7 @@ import Order from "../models/Order.js";
 import IceCream from "../models/IceCream.js";
 import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/AppError.js";
+import { createEarningForDeliveredOrder } from "../services/deliveryEarningService.js";
 
 // Create Order (Customer)
 export const createOrder = catchAsync(async (req, res, next) => {
@@ -91,8 +92,14 @@ export const createOrder = catchAsync(async (req, res, next) => {
       const iceCream = await IceCream.findById(item.iceCreamId);
       const variant = iceCream.variants.find((v) => v.size === item.size);
 
-      variant.stock -= item.quantity;
-      await iceCream.save();
+      await IceCream.updateOne(
+        {
+          _id: item.iceCreamId,
+          "variants.size": item.size,
+          "variants.stock": { $gte: item.quantity },
+        },
+        { $inc: { "variants.$.stock": -item.quantity } },
+      );
     }
   }
 
@@ -246,5 +253,29 @@ export const cancelOrder = catchAsync(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Order cancelled successfully.",
+  });
+});
+
+// Update order status (Admin)
+export const updateOrderStatus = catchAsync(async (req, res, next) => {
+  const { status } = req.body;
+
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    return next(new AppError("Order not found", 404));
+  }
+
+  order.status = status;
+  await order.save();
+
+  // 🔥 AUTO TRIGGER
+  if (order.status !== "delivered" && status === "delivered") {
+    await createEarningForDeliveredOrder(order);
+  }
+
+  res.status(200).json({
+    success: true,
+    data: order,
   });
 });

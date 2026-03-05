@@ -95,6 +95,9 @@ const DeliveryPersonSchema = new mongoose.Schema(
       enum: ["pending", "active", "suspended", "inactive", "rejected"],
       default: "pending",
     },
+
+    razorpayContactId: String,
+    razorpayFundAccountId: String,
   },
   { timestamps: true },
 );
@@ -136,8 +139,6 @@ DeliveryPersonSchema.methods.toSafeObject = function () {
     status: this.status,
   };
 };
-
-DeliveryPersonSchema.index({ userId: 1 });
 
 const DeliveryPerson = mongoose.model("DeliveryPerson", DeliveryPersonSchema);
 

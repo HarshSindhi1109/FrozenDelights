@@ -46,7 +46,7 @@ const DailyPayoutSchema = new mongoose.Schema(
 
     payoutStatus: {
       type: String,
-      enum: ["pending", "processed", "failed"],
+      enum: ["pending", "processing", "paid", "failed"],
       default: "pending",
     },
 
@@ -58,6 +58,10 @@ const DailyPayoutSchema = new mongoose.Schema(
     transactionReference: {
       type: String,
     },
+
+    razorpayPayoutId: String,
+    razorpayFundAccountId: String,
+    failureReason: String,
   },
   { timestamps: true },
 );
@@ -79,8 +83,12 @@ DailyPayoutSchema.pre("save", function (next) {
     (this.totalSurgeBonus || 0) +
     (this.totalTips || 0);
 
-  if (calculatedTotal !== this.totalEarnings) {
+  if (Math.abs(calculatedTotal - this.totalEarnings) > 0.01) {
     return next(new Error("total earning mismatch!!!"));
+  }
+
+  if (this.payoutStatus === "paid" && !this.paymentProvider) {
+    return next(new Error("Payment provider required for paid payout"));
   }
 
   next();

@@ -5,6 +5,7 @@ import {
   getMyOrders,
   getOrderById,
   cancelOrder,
+  updateOrderStatus,
 } from "../controllers/orderController.js";
 import {
   protect,
@@ -23,5 +24,12 @@ router.patch("/:id/cancel", protect, verifyCSRF, cancelOrder);
 
 // Admin Routes
 router.get("/", protect, authorize("admin"), getAllOrders);
+router.patch(
+  "/:id",
+  protect,
+  authorize("admin"),
+  verifyCSRF,
+  updateOrderStatus,
+);
 
 export default router;

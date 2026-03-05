@@ -57,7 +57,7 @@ export const verifyPayment = catchAsync(async (req, res, next) => {
   order.razorpayPaymentId = razorpay_payment_id;
   order.paidAt = Date.now();
 
-  await Order.save();
+  await order.save();
 
   for (const item of order.items) {
     const iceCream = await IceCream.findById(item.iceCreamId);
