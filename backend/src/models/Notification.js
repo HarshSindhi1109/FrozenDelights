@@ -12,7 +12,7 @@ const NotificationSchema = new mongoose.Schema(
     recipientType: {
       type: String,
       required: true,
-      enum: ["DeliveryPerson", "User", "Admin"],
+      enum: ["DeliveryPerson", "Customer", "Admin"],
       default: "DeliveryPerson",
     },
 
@@ -71,10 +71,6 @@ const NotificationSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
-/*
-Indexes
-*/
 
 // unread notifications
 NotificationSchema.index({ recipientId: 1, isRead: 1 });
