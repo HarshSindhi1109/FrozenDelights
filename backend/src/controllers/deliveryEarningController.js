@@ -1,10 +1,20 @@
 import DeliveryEarning from "../models/DeliveryEarning.js";
 import catchAsync from "../utils/catchAsync.js";
+import DeliveryPerson from "../models/DeliveryPerson.js";
+import AppError from "../utils/AppError.js";
 
 // Get earning of logged-in delivery person
 export const getMyEarnings = catchAsync(async (req, res, next) => {
+  const deliveryPerson = await DeliveryPerson.findOne({
+    userId: req.user.id,
+  });
+
+  if (!deliveryPerson || deliveryPerson.status !== 'active') {
+    return next(new AppError("Delivery Person not found or status not active", 404));
+  }
+
   const earnings = await DeliveryEarning.find({
-    deliveryPersonId: req.user.id,
+    deliveryPersonId: deliveryPerson._id,
   }).sort({ earningDate: -1 });
 
   res.status(200).json({
@@ -16,8 +26,16 @@ export const getMyEarnings = catchAsync(async (req, res, next) => {
 
 // Get unsettled earnings
 export const getUnsettledEarnings = catchAsync(async (req, res, next) => {
+  const deliveryPerson = await DeliveryPerson.findOne({
+    userId: req.user.id,
+  });
+
+  if (!deliveryPerson || deliveryPerson.status !== 'active') {
+    return next(new AppError("Delivery Person not found or status not active", 404));
+  }
+
   const earnings = await DeliveryEarning.find({
-    deliveryPersonId: req.user.id,
+    deliveryPersonId: deliveryPerson._id,
     isSettled: false,
   });
 

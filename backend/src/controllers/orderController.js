@@ -4,6 +4,8 @@ import IceCream from "../models/IceCream.js";
 import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/AppError.js";
 import { createEarningForDeliveredOrder } from "../services/deliveryEarningService.js";
+import DeliveryPerson from "../models/DeliveryPerson.js";
+import { dispatchOrderToDelivery } from "../services/orderDispatchService.js";
 
 // Create Order (Customer)
 export const createOrder = catchAsync(async (req, res, next) => {
@@ -266,16 +268,177 @@ export const updateOrderStatus = catchAsync(async (req, res, next) => {
     return next(new AppError("Order not found", 404));
   }
 
+  const previousStatus = order.status;
+
   order.status = status;
   await order.save();
 
+  if (
+    previousStatus !== "delivery_requested" &&
+    status === "delivery_requested"
+  ) {
+    const pickupLocation = [72.5714, 22.3072]; // Admin ice cream shop
+
+    await dispatchOrderToDelivery(order, pickupLocation);
+  }
+
   // 🔥 AUTO TRIGGER
-  if (order.status !== "delivered" && status === "delivered") {
+  if (previousStatus !== "delivered" && status === "delivered") {
     await createEarningForDeliveredOrder(order);
   }
 
   res.status(200).json({
     success: true,
+    data: order,
+  });
+});
+
+// Accept Delivery (DeliveryPerson)
+export const acceptDelivery = catchAsync(async (req, res, next) => {
+  const deliveryPerson = await DeliveryPerson.findOne({
+    userId: req.user.id,
+  });
+
+  if (!deliveryPerson) {
+    return next(new AppError("Delivery profile not found", 404));
+  }
+
+  if (deliveryPerson.availability !== "online") {
+    return next(new AppError("You are not available for delivery", 400));
+  }
+
+  const orderId = req.params.id;
+
+  const order = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      status: "delivery_requested",
+      deliveryPersonId: null, // prevents race condition
+    },
+    {
+      deliveryPersonId: deliveryPerson._id,
+      status: "delivery_assigned",
+    },
+    { new: true },
+  );
+
+  if (!order) {
+    return next(
+      new AppError("Order already accepted by another delivery person", 400),
+    );
+  }
+
+  // mark delivery person busy
+  deliveryPerson.availability = "busy";
+  await deliveryPerson.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Order accepted successfully",
+    data: order,
+  });
+});
+
+// Reject Delivery
+export const rejectDelivery = catchAsync(async (req, res, next) => {
+  const deliveryPerson = await DeliveryPerson.findOne({
+    userId: req.user.id,
+  });
+
+  if (!deliveryPerson) {
+    return next(new AppError("Delivery profile not found", 404));
+  }
+
+  const orderId = req.params.id;
+
+  const order = await Order.findById(orderId);
+
+  if (!order || order.status !== "delivery_requested") {
+    return next(new AppError("Order not available for rejection", 400));
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Delivery request rejected",
+  });
+});
+
+// when delivery person collects the item from shop
+export const pickupOrder = catchAsync(async (req, res, next) => {
+  const deliveryPerson = await DeliveryPerson.findOne({
+    userId: req.user.id,
+  });
+
+  if (!deliveryPerson) {
+    return next(new AppError("Delivery profile not found", 404));
+  }
+
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    return next(new AppError("Order not found", 404));
+  }
+
+  if (order.deliveryPersonId?.toString() !== deliveryPerson._id.toString()) {
+    return next(new AppError("You are not assigned to this order", 403));
+  }
+
+  if (order.status !== "delivery_assigned") {
+    return next(new AppError("Order not ready for pickup", 400));
+  }
+
+  order.status = "out_for_delivery";
+
+  await order.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Order picked up successfully",
+    data: order,
+  });
+});
+
+// After order delivers
+export const deliverOrder = catchAsync(async (req, res, next) => {
+  const deliveryPerson = await DeliveryPerson.findOne({
+    userId: req.user.id,
+  });
+
+  if (!deliveryPerson) {
+    return next(new AppError("Delivery profile not found", 404));
+  }
+
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    return next(new AppError("Order not found", 404));
+  }
+
+  if (order.deliveryPersonId?.toString() !== deliveryPerson._id.toString()) {
+    return next(new AppError("You are not assigned to this order", 403));
+  }
+
+  if (order.status !== "out_for_delivery") {
+    return next(new AppError("Order is not out for delivery", 400));
+  }
+
+  const previousStatus = order.status;
+
+  order.status = "delivered";
+  await order.save();
+
+  // trigger earning
+  if (previousStatus !== "delivered") {
+    await createEarningForDeliveredOrder(order);
+  }
+
+  // make delivery person available again
+  deliveryPerson.availability = "online";
+  await deliveryPerson.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Order delivered successfully",
     data: order,
   });
 });

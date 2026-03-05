@@ -98,6 +98,26 @@ const DeliveryPersonSchema = new mongoose.Schema(
 
     razorpayContactId: String,
     razorpayFundAccountId: String,
+
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0],
+      },
+    },
+
+    availability: {
+      type: String,
+      enum: ["offline", "online", "busy"],
+      default: "offline",
+    },
+
+    lastLocationUpdate: Date,
   },
   { timestamps: true },
 );
@@ -139,6 +159,8 @@ DeliveryPersonSchema.methods.toSafeObject = function () {
     status: this.status,
   };
 };
+
+DeliveryPersonSchema.index({ location: "2dsphere" });
 
 const DeliveryPerson = mongoose.model("DeliveryPerson", DeliveryPersonSchema);
 

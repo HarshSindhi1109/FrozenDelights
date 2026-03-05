@@ -6,6 +6,10 @@ import {
   getOrderById,
   cancelOrder,
   updateOrderStatus,
+  acceptDelivery,
+  rejectDelivery,
+  pickupOrder,
+  deliverOrder,
 } from "../controllers/orderController.js";
 import {
   protect,
@@ -21,6 +25,39 @@ router.get("/:id", protect, getOrderById);
 
 router.post("/", protect, verifyCSRF, createOrder);
 router.patch("/:id/cancel", protect, verifyCSRF, cancelOrder);
+
+// Delivery Person Routes
+router.post(
+  "/:id/accept-delivery",
+  protect,
+  authorize("delivery_man"),
+  verifyCSRF,
+  acceptDelivery,
+);
+
+router.post(
+  "/:id/reject-delivery",
+  protect,
+  authorize("delivery_man"),
+  verifyCSRF,
+  rejectDelivery,
+);
+
+router.patch(
+  "/:id/pickup",
+  protect,
+  authorize("delivery_man"),
+  verifyCSRF,
+  pickupOrder,
+);
+
+router.patch(
+  "/:id/deliver",
+  protect,
+  authorize("delivery_man"),
+  verifyCSRF,
+  deliverOrder,
+);
 
 // Admin Routes
 router.get("/", protect, authorize("admin"), getAllOrders);

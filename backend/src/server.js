@@ -31,6 +31,7 @@ import { startDailyPayoutJob } from "./jobs/dailyPayoutJob.js";
 import { razorpayWebhook } from "./controllers/webhookController.js";
 import deliveryEarningRoutes from "./routes/deliveryEarningRoutes.js";
 import dailyPayoutRoutes from "./routes/dailyPayoutRoutes.js";
+import { initSocketServer } from "./sockets/socketServer.js";
 
 const app = express();
 
@@ -105,7 +106,12 @@ const startServer = async () => {
       cert: fs.readFileSync(path.join(__dirname, "../cert.pem")),
     };
 
-    https.createServer(options, app).listen(PORT, () => {
+    const httpsServer = https.createServer(options, app);
+
+    // initialize socket server
+    initSocketServer(httpsServer);
+
+    httpsServer.listen(PORT, () => {
       console.log(`HTTPS server running at https://localhost:${PORT}`);
     });
   } catch (error) {
