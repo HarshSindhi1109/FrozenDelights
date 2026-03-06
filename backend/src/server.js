@@ -35,6 +35,7 @@ import reviewRoutes from "./routes/reviewRoutes.js";
 import addressRoutes from "./routes/addressRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import sanitizeBody from "./middleware/sanitizeMiddleware.js";
+import cartRoutes from "./routes/cartRoutes.js";
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use("/api/v1/daily-payouts", dailyPayoutRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/addresses", addressRoutes);
 app.use("/api/v1/contacts", contactRoutes);
+app.use("/api/v1/cart", cartRoutes);
 
 // Images can be accessed by browser
 app.use("/uploads", express.static("uploads"));
