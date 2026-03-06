@@ -142,6 +142,31 @@ const OrderSchema = new mongoose.Schema(
     cancellationReason: {
       type: String,
     },
+
+    dispatchAttempts: {
+      type: Number,
+      default: 0,
+    },
+
+    notifiedDeliveryPersons: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DeliveryPerson",
+      },
+    ],
+
+    rejectedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DeliveryPerson",
+      },
+    ],
+
+    dispatchStatus: {
+      type: String,
+      enum: ["waiting", "assigned", "failed"],
+      default: "waiting",
+    },
   },
   { timestamps: true },
 );
@@ -178,6 +203,7 @@ OrderSchema.index({ userId: 1, createdAt: -1 });
 OrderSchema.index({ deliveryPersonId: 1, status: 1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ orderNumber: 1 });
+OrderSchema.index({ status: 1, dispatchStatus: 1 });
 
 const Order = mongoose.model("Order", OrderSchema);
 

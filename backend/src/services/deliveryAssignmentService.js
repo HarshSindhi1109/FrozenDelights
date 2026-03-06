@@ -1,10 +1,14 @@
 import DeliveryPerson from "../models/DeliveryPerson.js";
 
-export const findNearestDeliveryPersons = async (pickupLocation) => {
+export const findNearestDeliveryPersons = async (
+  pickupLocation,
+  excludedDrivers = [],
+) => {
   const deliveryPersons = await DeliveryPerson.find({
+    _id: { $nin: excludedDrivers },
     status: "active",
     availability: "online",
-    lastLocationUpdate: { $gte: Date.now() - 30000 },
+    lastLocationUpdate: { $gte: Date.now() - 300000 }, // last 5 minutes
 
     location: {
       $near: {

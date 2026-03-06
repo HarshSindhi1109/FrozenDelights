@@ -321,8 +321,21 @@ export const acceptDelivery = catchAsync(async (req, res, next) => {
     return next(new AppError("Delivery profile not found", 404));
   }
 
+  if (deliveryPerson.status !== "active") {
+    return next(new AppError("Delivery account not active", 403));
+  }
+
   if (deliveryPerson.availability !== "online") {
     return next(new AppError("You are not available for delivery", 400));
+  }
+
+  const activeOrder = await Order.findOne({
+    deliveryPersonId: deliveryPerson._id,
+    status: { $in: ["delivery_assigned", "out_for_delivery"] },
+  });
+
+  if (activeOrder) {
+    return next(new AppError("You already have an active delivery", 400));
   }
 
   const orderId = req.params.id;
@@ -336,6 +349,7 @@ export const acceptDelivery = catchAsync(async (req, res, next) => {
     {
       deliveryPersonId: deliveryPerson._id,
       status: "delivery_assigned",
+      dispatchStatus: "assigned",
     },
     { new: true },
   );
@@ -374,6 +388,20 @@ export const rejectDelivery = catchAsync(async (req, res, next) => {
   if (!order || order.status !== "delivery_requested") {
     return next(new AppError("Order not available for rejection", 400));
   }
+
+  const alreadyRejected = order.rejectedBy.some((id) =>
+    id.equals(deliveryPerson._id),
+  );
+
+  if (alreadyRejected) {
+    return next(new AppError("You already rejected this order", 400));
+  }
+
+  order.rejectedBy.push(deliveryPerson._id);
+  await order.save();
+
+  // dispatch to other drivers
+  await dispatchOrderToDelivery(order, [72.5714, 22.3072]);
 
   res.status(200).json({
     success: true,
