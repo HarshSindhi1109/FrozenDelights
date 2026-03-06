@@ -11,7 +11,6 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import mongoSanitize from "express-mongo-sanitize";
-import xss from "xss-clean";
 import hpp from "hpp";
 
 // import files
@@ -35,6 +34,7 @@ import { initSocketServer } from "./sockets/socketServer.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import addressRoutes from "./routes/addressRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import sanitizeBody from "./middleware/sanitizeMiddleware.js";
 
 const app = express();
 
@@ -56,10 +56,11 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(cookieParser());
 
+app.use(sanitizeBody);
 app.use(mongoSanitize());
-app.use(xss());
 app.use(hpp());
 
 // Apply rate limiter to all api routes

@@ -33,6 +33,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
     "razorpay": "^2.9.6",
+    "sanitize-html": "^2.17.1",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "xss-clean": "^0.1.4"
