@@ -1,5 +1,4 @@
 import User from "../models/User.js";
-import crypto from "crypto";
 import bcrypt from "bcrypt";
 import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/AppError.js";

@@ -36,6 +36,7 @@ import addressRoutes from "./routes/addressRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import sanitizeBody from "./middleware/sanitizeMiddleware.js";
 import cartRoutes from "./routes/cartRoutes.js";
+import deliveryRatingRoutes from "./routes/deliveryRatingRoutes.js";
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use("/api/v1/flavours", flavourRoutes);
 app.use("/api/v1/ice-creams", iceCreamRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/delivery-ratings", deliveryRatingRoutes);
 app.use("/api/v1/delivery-earnings", deliveryEarningRoutes);
 app.use("/api/v1/daily-payouts", dailyPayoutRoutes);
 app.use("/api/v1/reviews", reviewRoutes);

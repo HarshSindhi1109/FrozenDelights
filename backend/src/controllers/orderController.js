@@ -270,21 +270,39 @@ export const updateOrderStatus = catchAsync(async (req, res, next) => {
 
   const previousStatus = order.status;
 
+  const allowedTransitions = {
+    pending: ["confirmed", "cancelled"],
+    confirmed: ["preparing", "cancelled"],
+    preparing: ["delivery_requested"],
+    delivery_requested: ["delivery_assigned"],
+    delivery_assigned: ["out_for_delivery"],
+    out_for_delivery: ["delivered"],
+    delivered: [],
+    cancelled: [],
+  };
+
+  const nextStatuses = allowedTransitions[previousStatus];
+
+  if (!nextStatuses.includes(status)) {
+    return next(
+      new AppError(
+        `Invalid status transition from ${previousStatus} to ${status}`,
+        400,
+      ),
+    );
+  }
+
   order.status = status;
   await order.save();
 
+  // dispatch delivery when ready
   if (
     previousStatus !== "delivery_requested" &&
     status === "delivery_requested"
   ) {
-    const pickupLocation = [72.5714, 22.3072]; // Admin ice cream shop
+    const pickupLocation = [72.5714, 22.3072];
 
     await dispatchOrderToDelivery(order, pickupLocation);
-  }
-
-  // 🔥 AUTO TRIGGER
-  if (previousStatus !== "delivered" && status === "delivered") {
-    await createEarningForDeliveredOrder(order);
   }
 
   res.status(200).json({
