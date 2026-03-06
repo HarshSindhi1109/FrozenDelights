@@ -23,7 +23,14 @@ export const otpLimiter = rateLimit({
 
 // Payment limiter
 export const paymentLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000, 
-  max: 10, 
+  windowMs: 10 * 60 * 1000,
+  max: 10,
   message: "Too many payment attempts. Please try again later.",
+});
+
+// Contact limiter
+export const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Too many contact requests. Try again later.",
 });

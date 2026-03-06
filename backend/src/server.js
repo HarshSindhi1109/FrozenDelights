@@ -32,6 +32,9 @@ import { razorpayWebhook } from "./controllers/webhookController.js";
 import deliveryEarningRoutes from "./routes/deliveryEarningRoutes.js";
 import dailyPayoutRoutes from "./routes/dailyPayoutRoutes.js";
 import { initSocketServer } from "./sockets/socketServer.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
+import addressRoutes from "./routes/addressRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 
 const app = express();
 
@@ -65,7 +68,7 @@ app.use("/api/v1", apiLimiter);
 // API Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/otp", otpRoutes);
-app.use("/api/v1/delivery", deliveryPersonRoutes);
+app.use("/api/v1/delivery-persons", deliveryPersonRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/flavours", flavourRoutes);
 app.use("/api/v1/ice-creams", iceCreamRoutes);
@@ -73,6 +76,9 @@ app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/delivery-earnings", deliveryEarningRoutes);
 app.use("/api/v1/daily-payouts", dailyPayoutRoutes);
+app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/addresses", addressRoutes);
+app.use("/api/v1/contacts", contactRoutes);
 
 // Images can be accessed by browser
 app.use("/uploads", express.static("uploads"));

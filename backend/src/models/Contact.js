@@ -6,6 +6,8 @@ const ContactSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      minLength: 2,
+      maxLength: 50,
     },
 
     email: {
@@ -19,6 +21,7 @@ const ContactSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      match: [/^[0-9]{10,15}$/, "Invalid phone number"],
     },
 
     message: {
@@ -31,9 +34,18 @@ const ContactSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "in-progess", "resolved"],
+      enum: ["pending", "in-progress", "resolved"],
       default: "pending",
     },
+
+    reply: {
+      message: {
+        type: String,
+        trim: true,
+        maxLength: 1000,
+      },
+      repliedAt: Date,
+    }
   },
   { timestamps: true },
 );
