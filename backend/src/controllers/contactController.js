@@ -93,7 +93,7 @@ export const updateContactStatus = catchAsync(async (req, res, next) => {
   }
 
   contact.status = status;
-  await status.save();
+  await contact.save();
 
   res.status(200).json({
     success: true,
