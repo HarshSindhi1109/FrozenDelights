@@ -1,0 +1,470 @@
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800&display=swap");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Page ── */
+.icv-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    150deg,
+    #fff8e1 0%,
+    #fce4ec 40%,
+    #e8eaf6 80%,
+    #fff8e1 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Nunito", sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Blobs ── */
+.icv-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(58px);
+  opacity: 0.42;
+  pointer-events: none;
+  animation: icvFloat 9s ease-in-out infinite alternate;
+}
+
+.icv-blob-1 {
+  width: 360px;
+  height: 360px;
+  background: #ffe082;
+  top: -90px;
+  left: -80px;
+  animation-delay: 0s;
+}
+
+.icv-blob-2 {
+  width: 300px;
+  height: 300px;
+  background: #f48fb1;
+  bottom: -70px;
+  right: -70px;
+  animation-delay: 2.5s;
+}
+
+.icv-blob-3 {
+  width: 200px;
+  height: 200px;
+  background: #9fa8da;
+  top: 45%;
+  right: 8%;
+  animation-delay: 1s;
+}
+
+@keyframes icvFloat {
+  from {
+    transform: translateY(0px) scale(1);
+  }
+  to {
+    transform: translateY(-26px) scale(1.06);
+  }
+}
+
+/* ── Sprinkles ── */
+.icv-sprinkle {
+  position: absolute;
+  border-radius: 999px;
+  opacity: 0.65;
+  pointer-events: none;
+  animation: icvSpin linear infinite;
+}
+
+@keyframes icvSpin {
+  from {
+    transform: rotate(0deg) translateX(3px);
+  }
+  to {
+    transform: rotate(360deg) translateX(3px);
+  }
+}
+
+/* ── Invalid state ── */
+.icv-invalid {
+  font-family: "Nunito", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #c2185b;
+  background: #fce4ec;
+  padding: 20px 32px;
+  border-radius: 16px;
+  border: 1.5px solid #f48fb1;
+}
+
+/* ── Card ── */
+.icv-card {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.89);
+  backdrop-filter: blur(20px);
+  border-radius: 32px;
+  padding: 48px 44px 42px;
+  width: 100%;
+  max-width: 430px;
+  box-shadow:
+    0 8px 36px rgba(255, 224, 130, 0.22),
+    0 2px 10px rgba(0, 0, 0, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.72);
+  animation: icvCardIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes icvCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(44px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Icon ── */
+.icv-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+  animation: icvPop 2.8s ease-in-out infinite;
+}
+
+@keyframes icvPop {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  30% {
+    transform: scale(1.12) rotate(-6deg);
+  }
+  60% {
+    transform: scale(1.12) rotate(6deg);
+  }
+}
+
+.icv-icon-emoji {
+  font-size: 54px;
+  filter: drop-shadow(0 4px 14px rgba(255, 202, 40, 0.5));
+}
+
+/* ── Heading ── */
+.icv-title {
+  font-family: "Pacifico", cursive;
+  font-size: 1.9rem;
+  color: #f57f17;
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* ── Email hint ── */
+.icv-hint {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #9e9e9e;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.icv-hint strong {
+  color: #f57f17;
+  font-weight: 800;
+}
+
+/* ── OTP boxes ── */
+.icv-otp-label {
+  display: block;
+  font-size: 0.81rem;
+  font-weight: 800;
+  color: #e65100;
+  margin-bottom: 12px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.icv-otp-wrap {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.icv-otp-box {
+  width: 52px;
+  height: 60px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-family: "Pacifico", cursive;
+  font-weight: 400;
+  color: #e65100;
+  background: rgba(255, 248, 225, 0.7);
+  border: 2px solid #ffcc80;
+  border-radius: 16px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s,
+    transform 0.15s;
+  caret-color: #fb8c00;
+}
+
+.icv-otp-box:focus {
+  border-color: #fb8c00;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(251, 140, 0, 0.14);
+  transform: translateY(-3px) scale(1.06);
+}
+
+.icv-otp-box.filled {
+  border-color: #f57f17;
+  background: rgba(255, 248, 225, 0.95);
+}
+
+/* Hidden full OTP input (fallback) */
+.icv-otp-input-hidden {
+  display: none;
+}
+
+/* ── Error ── */
+.icv-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #fce4ec, #fff0f5);
+  border: 1.5px solid #f48fb1;
+  color: #c2185b;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin: 14px 0;
+  animation: icvShake 0.4s ease;
+}
+
+@keyframes icvShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+/* ── Verify button ── */
+.icv-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #ffca28 0%, #fb8c00 50%, #e65100 100%);
+  color: white;
+  border: none;
+  border-radius: 18px;
+  font-family: "Pacifico", cursive;
+  font-size: 1.07rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 6px 20px rgba(230, 81, 0, 0.32),
+    0 2px 8px rgba(230, 81, 0, 0.18);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+  margin-top: 20px;
+}
+
+.icv-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 10px 28px rgba(230, 81, 0, 0.4),
+    0 4px 12px rgba(230, 81, 0, 0.22);
+}
+
+.icv-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.icv-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.icv-btn-shine {
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: icvShine 2.5s ease-in-out infinite;
+}
+
+@keyframes icvShine {
+  0% {
+    left: -75%;
+  }
+  58% {
+    left: 125%;
+  }
+  100% {
+    left: 125%;
+  }
+}
+
+/* ── Divider ── */
+.icv-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 18px;
+  color: #ffcc80;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.icv-divider::before,
+.icv-divider::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #ffe0b2, transparent);
+}
+
+/* ── Resend section ── */
+.icv-resend-wrap {
+  text-align: center;
+}
+
+.icv-resend-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #9e9e9e;
+  margin-bottom: 10px;
+}
+
+.icv-resend-btn {
+  background: transparent;
+  border: 2px solid #ffcc80;
+  border-radius: 14px;
+  padding: 10px 28px;
+  font-family: "Nunito", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #f57f17;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    color 0.18s,
+    transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.icv-resend-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fff8e1, #ffe0b2);
+  border-color: #fb8c00;
+  color: #e65100;
+  transform: translateY(-1px);
+}
+
+.icv-resend-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.icv-resend-btn:disabled {
+  border-color: #f5f5f5;
+  color: #bdbdbd;
+  cursor: not-allowed;
+  background: #fafafa;
+}
+
+/* ── Countdown ring / timer ── */
+.icv-cooldown-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.icv-cooldown-ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.icv-cooldown-ring svg {
+  transform: rotate(-90deg);
+}
+
+.icv-cooldown-ring circle.track {
+  fill: none;
+  stroke: #ffe0b2;
+  stroke-width: 4;
+}
+
+.icv-cooldown-ring circle.progress {
+  fill: none;
+  stroke: #fb8c00;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.icv-cooldown-number {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Pacifico", cursive;
+  font-size: 0.95rem;
+  color: #f57f17;
+}
+
+.icv-cooldown-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffb74d;
+  letter-spacing: 0.3px;
+}
+
+/* ── Dots ── */
+.icv-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 24px;
+}
+
+.icv-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0.4;
+}

@@ -1,0 +1,420 @@
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800&display=swap");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.icr-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    145deg,
+    #e8f5e9 0%,
+    #fff8e1 35%,
+    #fce4ec 70%,
+    #e3f2fd 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Nunito", sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Blobs ── */
+.icr-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(55px);
+  opacity: 0.4;
+  pointer-events: none;
+  animation: icrFloat 9s ease-in-out infinite alternate;
+}
+
+.icr-blob-1 {
+  width: 380px;
+  height: 380px;
+  background: #a5d6a7;
+  top: -100px;
+  right: -80px;
+  animation-delay: 0s;
+}
+
+.icr-blob-2 {
+  width: 300px;
+  height: 300px;
+  background: #ffe082;
+  bottom: -60px;
+  left: -60px;
+  animation-delay: 3s;
+}
+
+.icr-blob-3 {
+  width: 220px;
+  height: 220px;
+  background: #f48fb1;
+  top: 50%;
+  right: 5%;
+  animation-delay: 1.5s;
+}
+
+@keyframes icrFloat {
+  from {
+    transform: translateY(0px) scale(1);
+  }
+  to {
+    transform: translateY(-28px) scale(1.06);
+  }
+}
+
+/* ── Sprinkles ── */
+.icr-sprinkle {
+  position: absolute;
+  border-radius: 999px;
+  opacity: 0.65;
+  pointer-events: none;
+  animation: icrSpin linear infinite;
+}
+
+@keyframes icrSpin {
+  from {
+    transform: rotate(0deg) translateY(3px);
+  }
+  to {
+    transform: rotate(360deg) translateY(3px);
+  }
+}
+
+/* ── Card ── */
+.icr-card {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.87);
+  backdrop-filter: blur(20px);
+  border-radius: 32px;
+  padding: 44px 44px 38px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow:
+    0 8px 36px rgba(165, 214, 167, 0.22),
+    0 2px 10px rgba(0, 0, 0, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.72);
+  animation: icrCardIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes icrCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(44px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Icon ── */
+.icr-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+  animation: icrWiggle 3s ease-in-out infinite;
+}
+
+@keyframes icrWiggle {
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-8deg) scale(1.08);
+  }
+  75% {
+    transform: rotate(8deg) scale(1.08);
+  }
+}
+
+.icr-cone-emoji {
+  font-size: 54px;
+  filter: drop-shadow(0 4px 12px rgba(165, 214, 167, 0.5));
+}
+
+/* ── Headings ── */
+.icr-title {
+  font-family: "Pacifico", cursive;
+  font-size: 1.9rem;
+  color: #2e7d32;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.icr-subtitle {
+  text-align: center;
+  color: #66bb6a;
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin-bottom: 28px;
+  letter-spacing: 0.2px;
+}
+
+/* ── Steps ── */
+.icr-steps {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.icr-step {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #a5d6a7;
+  letter-spacing: 0.2px;
+}
+
+.icr-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #c8e6c9;
+  color: #2e7d32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.icr-step-arrow {
+  color: #c8e6c9;
+  font-size: 10px;
+}
+
+/* ── Form Fields ── */
+.icr-field {
+  margin-bottom: 16px;
+}
+
+.icr-label {
+  display: block;
+  font-size: 0.81rem;
+  font-weight: 800;
+  color: #1b5e20;
+  margin-bottom: 7px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.icr-input-wrap {
+  position: relative;
+}
+
+.icr-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.icr-input {
+  width: 100%;
+  padding: 13px 16px 13px 42px;
+  border: 2px solid #c8e6c9;
+  border-radius: 16px;
+  font-size: 0.97rem;
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+  color: #1a3a1a;
+  background: rgba(232, 245, 233, 0.5);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+  outline: none;
+}
+
+.icr-input::placeholder {
+  color: #81c784;
+  font-weight: 600;
+}
+
+.icr-input:focus {
+  border-color: #4caf50;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.12);
+}
+
+/* ── Error ── */
+.icr-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #fce4ec, #fff0f5);
+  border: 1.5px solid #f48fb1;
+  color: #c2185b;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  animation: icrShake 0.4s ease;
+}
+
+@keyframes icrShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+/* ── Button ── */
+.icr-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #66bb6a 0%, #43a047 50%, #2e7d32 100%);
+  color: white;
+  border: none;
+  border-radius: 18px;
+  font-family: "Pacifico", cursive;
+  font-size: 1.07rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 6px 20px rgba(46, 125, 50, 0.32),
+    0 2px 8px rgba(46, 125, 50, 0.18);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+  margin-top: 4px;
+}
+
+.icr-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 10px 28px rgba(46, 125, 50, 0.4),
+    0 4px 12px rgba(46, 125, 50, 0.22);
+}
+
+.icr-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.icr-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.icr-btn-shine {
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.22),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: icrShine 2.6s ease-in-out infinite;
+}
+
+@keyframes icrShine {
+  0% {
+    left: -75%;
+  }
+  55% {
+    left: 125%;
+  }
+  100% {
+    left: 125%;
+  }
+}
+
+/* ── Divider ── */
+.icr-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 18px;
+  color: #81c784;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.icr-divider::before,
+.icr-divider::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #c8e6c9, transparent);
+}
+
+/* ── Footer / Link ── */
+.icr-footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.icr-footer a {
+  color: #43a047;
+  font-weight: 800;
+  text-decoration: none;
+  position: relative;
+}
+
+.icr-footer a::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #66bb6a;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transition: transform 0.22s;
+}
+
+.icr-footer a:hover::after {
+  transform: scaleX(1);
+}
+
+/* ── Dots ── */
+.icr-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+}
+
+.icr-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0.45;
+}

@@ -1,0 +1,378 @@
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800&display=swap");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.ic-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    #fff0f5 0%,
+    #fce4ec 30%,
+    #fff8e1 70%,
+    #fce4ec 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Nunito", sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Blobs ── */
+.ic-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.45;
+  pointer-events: none;
+  animation: icFloat 8s ease-in-out infinite alternate;
+}
+.ic-blob-1 {
+  width: 420px;
+  height: 420px;
+  background: #f48fb1;
+  top: -120px;
+  left: -100px;
+  animation-delay: 0s;
+}
+.ic-blob-2 {
+  width: 320px;
+  height: 320px;
+  background: #ffe082;
+  bottom: -80px;
+  right: -80px;
+  animation-delay: 2s;
+}
+.ic-blob-3 {
+  width: 200px;
+  height: 200px;
+  background: #b2ebf2;
+  top: 40%;
+  left: 5%;
+  animation-delay: 4s;
+}
+
+@keyframes icFloat {
+  from {
+    transform: translateY(0px) scale(1);
+  }
+  to {
+    transform: translateY(-30px) scale(1.07);
+  }
+}
+
+/* ── Sprinkles ── */
+.ic-sprinkle {
+  position: absolute;
+  border-radius: 999px;
+  opacity: 0.7;
+  pointer-events: none;
+  animation: icSpin linear infinite;
+}
+
+@keyframes icSpin {
+  from {
+    transform: rotate(0deg) translateX(4px);
+  }
+  to {
+    transform: rotate(360deg) translateX(4px);
+  }
+}
+
+/* ── Card ── */
+.ic-card {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(18px);
+  border-radius: 32px;
+  padding: 48px 44px 40px;
+  width: 100%;
+  max-width: 430px;
+  box-shadow:
+    0 8px 32px rgba(244, 143, 177, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  animation: icCardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes icCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Icon ── */
+.ic-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+  animation: icBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes icBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.ic-cone-emoji {
+  font-size: 56px;
+  filter: drop-shadow(0 4px 12px rgba(244, 143, 177, 0.4));
+}
+
+/* ── Headings ── */
+.ic-title {
+  font-family: "Pacifico", cursive;
+  font-size: 2rem;
+  color: #d81b60;
+  text-align: center;
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+}
+
+.ic-subtitle {
+  text-align: center;
+  color: #f48fb1;
+  font-size: 0.93rem;
+  font-weight: 600;
+  margin-bottom: 30px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Form Fields ── */
+.ic-field {
+  margin-bottom: 18px;
+}
+
+.ic-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ad1457;
+  margin-bottom: 7px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.ic-input-wrap {
+  position: relative;
+}
+
+.ic-input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.ic-input {
+  width: 100%;
+  padding: 13px 16px 13px 42px;
+  border: 2px solid #f8bbd0;
+  border-radius: 16px;
+  font-size: 0.97rem;
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+  color: #4a1942;
+  background: rgba(255, 240, 245, 0.6);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+  outline: none;
+}
+
+.ic-input::placeholder {
+  color: #f48fb1;
+  font-weight: 600;
+}
+
+.ic-input:focus {
+  border-color: #f06292;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(240, 98, 146, 0.13);
+}
+
+/* ── Error ── */
+.ic-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #fce4ec, #fff0f5);
+  border: 1.5px solid #f48fb1;
+  color: #c2185b;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  animation: icShake 0.4s ease;
+}
+
+@keyframes icShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+/* ── Button ── */
+.ic-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #f06292 0%, #e91e8c 50%, #d81b60 100%);
+  color: white;
+  border: none;
+  border-radius: 18px;
+  font-family: "Pacifico", cursive;
+  font-size: 1.08rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 6px 20px rgba(216, 27, 96, 0.35),
+    0 2px 8px rgba(216, 27, 96, 0.2);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
+  margin-top: 6px;
+}
+
+.ic-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 10px 28px rgba(216, 27, 96, 0.4),
+    0 4px 12px rgba(216, 27, 96, 0.25);
+}
+
+.ic-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ic-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.ic-btn-shine {
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: icShine 2.4s ease-in-out infinite;
+}
+
+@keyframes icShine {
+  0% {
+    left: -75%;
+  }
+  60% {
+    left: 125%;
+  }
+  100% {
+    left: 125%;
+  }
+}
+
+/* ── Divider ── */
+.ic-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 20px;
+  color: #f48fb1;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ic-divider::before,
+.ic-divider::after {
+  content: "";
+  flex: 1;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #f8bbd0, transparent);
+}
+
+/* ── Footer / Link ── */
+.ic-footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #ad1457;
+  font-weight: 600;
+}
+
+.ic-footer a {
+  color: #e91e8c;
+  font-weight: 800;
+  text-decoration: none;
+  position: relative;
+}
+
+.ic-footer a::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #f06292;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transition: transform 0.22s;
+}
+
+.ic-footer a:hover::after {
+  transform: scaleX(1);
+}
+
+/* ── Dots ── */
+.ic-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 22px;
+}
+
+.ic-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0.4;
+}
