@@ -107,14 +107,17 @@ const startServer = async () => {
 
     startDailyPayoutJob();
 
-    if (!fs.existsSync(path.join(__dirname, "../key.pem"))) {
+    const keyPath = path.join(__dirname, "../localhost-key.pem");
+    const certPath = path.join(__dirname, "../localhost.pem");
+
+    if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
       console.error("SSL files not found");
       process.exit(1);
     }
 
     const options = {
-      key: fs.readFileSync(path.join(__dirname, "../localhost-key.pem")),
-      cert: fs.readFileSync(path.join(__dirname, "../localhost.pem")),
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath),
     };
 
     const httpsServer = https.createServer(options, app);
