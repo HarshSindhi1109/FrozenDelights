@@ -1,7 +1,7 @@
 node_modules/
 .env
 scripts/
-
+uploads/
 
 *.pem
 key.pem
