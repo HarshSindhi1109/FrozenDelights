@@ -202,7 +202,6 @@ OrderSchema.pre("save", function (next) {
 OrderSchema.index({ userId: 1, createdAt: -1 });
 OrderSchema.index({ deliveryPersonId: 1, status: 1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
-OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ status: 1, dispatchStatus: 1 });
 
 const Order = mongoose.model("Order", OrderSchema);
