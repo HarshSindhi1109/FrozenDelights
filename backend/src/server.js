@@ -113,8 +113,8 @@ const startServer = async () => {
     }
 
     const options = {
-      key: fs.readFileSync(path.join(__dirname, "../key.pem")),
-      cert: fs.readFileSync(path.join(__dirname, "../cert.pem")),
+      key: fs.readFileSync(path.join(__dirname, "../localhost-key.pem")),
+      cert: fs.readFileSync(path.join(__dirname, "../localhost.pem")),
     };
 
     const httpsServer = https.createServer(options, app);
