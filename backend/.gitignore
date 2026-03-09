@@ -1,5 +1,8 @@
 node_modules/
 .env
 scripts/
-localhost-key.pem
-localhost.pem
+
+
+*.pem
+key.pem
+cert.pem
