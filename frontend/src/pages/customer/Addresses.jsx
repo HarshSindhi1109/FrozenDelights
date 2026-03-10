@@ -496,7 +496,7 @@ const Addresses = () => {
       {/* ════ NAV ════ */}
       <nav className="ad-nav">
         <div className="ad-nav-inner">
-          <Link to="/" className="ad-nav-back">
+          <button className="pf-nav-back" onClick={() => navigate(-1)}>
             <svg
               width="17"
               height="17"
@@ -508,7 +508,7 @@ const Addresses = () => {
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
             Back
-          </Link>
+          </button>
           <span className="ad-nav-brand">
             <span>🍦</span> My Addresses
           </span>

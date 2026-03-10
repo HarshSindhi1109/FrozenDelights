@@ -30,7 +30,7 @@ const Login = () => {
       const res = await api.post("/auth/login", formData);
       const user = res.data.user;
       if (user.role === "customer") {
-        navigate("/");
+        navigate("/customer/home");
       } else {
         setError("Access denied. Customer only.");
       }
@@ -139,7 +139,7 @@ const Login = () => {
 
         <GoogleAuthButton
           onSuccess={(user) => {
-            if (user.role === "customer") navigate("/");
+            if (user.role === "customer") navigate("/customer/home");
             else setError("Access denied. Customer only.");
           }}
           onError={(msg) => setError(msg)}

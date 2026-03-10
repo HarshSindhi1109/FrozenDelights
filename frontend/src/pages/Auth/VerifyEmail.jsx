@@ -79,7 +79,7 @@ const VerifyEmail = () => {
     try {
       const res = await api.post("/otp/verify-email", { email, otp });
       alert(res.data.message);
-      navigate("/");
+      navigate("/customer/home");
     } catch (err) {
       setError(err.response?.data?.message || "Verification failed");
     } finally {

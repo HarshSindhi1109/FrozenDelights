@@ -251,7 +251,7 @@ const Profile = () => {
       {/* ════ NAV ════ */}
       <nav className="pf-nav">
         <div className="pf-nav-inner">
-          <Link to="/" className="pf-nav-back">
+          <button className="pf-nav-back" onClick={() => navigate(-1)}>
             <svg
               width="17"
               height="17"
@@ -263,7 +263,7 @@ const Profile = () => {
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
             Back
-          </Link>
+          </button>
 
           <span className="pf-nav-brand">
             <span className="pf-nav-brand-icon">🍦</span>
@@ -597,7 +597,11 @@ const Profile = () => {
             <div className="pf-shortcut-list">
               {[
                 { to: "/orders", icon: "📦", label: "My Orders" },
-                { to: "/customer/addresses", icon: "📍", label: "Saved Addresses" },
+                {
+                  to: "/customer/addresses",
+                  icon: "📍",
+                  label: "Saved Addresses",
+                },
                 { to: "/cart", icon: "🛒", label: "My Cart" },
               ].map(({ to, icon, label }) => (
                 <Link key={to} to={to} className="pf-shortcut">

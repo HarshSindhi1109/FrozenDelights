@@ -267,7 +267,7 @@
   justify-content: space-between;
 }
 
-.pf-nav-back {
+button.pf-nav-back {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -276,6 +276,10 @@
   font-weight: 600;
   color: var(--pf-text2);
   transition: color 0.15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 .pf-nav-back:hover {

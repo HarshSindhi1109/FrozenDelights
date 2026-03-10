@@ -179,7 +179,7 @@ const Register = () => {
         <div style={{ marginTop: "1rem" }}>
           <GoogleAuthButton
             onSuccess={(user) => {
-              if (user.role === "customer") navigate("/");
+              if (user.role === "customer") navigate("/customer/home");
               else setError("Access denied. Customer only.");
             }}
             onError={(msg) => setError(msg)}
