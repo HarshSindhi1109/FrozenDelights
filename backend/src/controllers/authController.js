@@ -358,7 +358,7 @@ export const googleAuthToken = catchAsync(async (req, res, next) => {
 export const getMe = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id);
 
-  if (!user) return next(new AppError("User not found", 404));
+  if (!user || user.isDeleted) return next(new AppError("User not found", 404));
 
   res.status(200).json({ success: true, user });
 });

@@ -8,21 +8,43 @@ import AdminLogin from "../pages/Auth/AdminLogin";
 import HomePage from "../pages/customer/HomePage";
 import Profile from "../pages/customer/Profile";
 import Addresses from "../pages/customer/Addresses";
+import ProtectedRoute from "./ProtectedRoute";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/landing-page" element={<LandingPage />} />
         <Route path="/delivery/login" element={<DeliveryLogin />} />
         <Route path="/admin/login" element={<AdminLogin />} />
 
-        <Route path="/customer/home" element={<HomePage />} />
-        <Route path="/customer/profile" element={<Profile />} />
-        <Route path="/customer/addresses" element={<Addresses />} />
+        <Route
+          path="/customer/home"
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/customer/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/customer/addresses"
+          element={
+            <ProtectedRoute>
+              <Addresses />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
