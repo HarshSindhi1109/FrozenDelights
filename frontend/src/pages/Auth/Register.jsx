@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import "./Register.css";
+import GoogleAuthButton from "../../components/common/GoogleAuthButton";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -174,6 +175,16 @@ const Register = () => {
             {loading ? "Mixing your scoop... 🍨" : "Create My Account 🎉"}
           </button>
         </form>
+
+        <div style={{ marginTop: "1rem" }}>
+          <GoogleAuthButton
+            onSuccess={(user) => {
+              if (user.role === "customer") navigate("/");
+              else setError("Access denied. Customer only.");
+            }}
+            onError={(msg) => setError(msg)}
+          />
+        </div>
 
         <div className="icr-divider">already a scooper?</div>
 

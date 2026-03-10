@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import "./Login.css";
+import GoogleAuthButton from "../../components/common/GoogleAuthButton";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ const Login = () => {
       const user = res.data.user;
       if (user.role === "customer") {
         navigate("/");
+      } else {
+        setError("Access denied. Customer only.");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Try again.");
@@ -133,6 +136,14 @@ const Login = () => {
         </form>
 
         <div className="ic-divider">or</div>
+
+        <GoogleAuthButton
+          onSuccess={(user) => {
+            if (user.role === "customer") navigate("/");
+            else setError("Access denied. Customer only.");
+          }}
+          onError={(msg) => setError(msg)}
+        />
 
         <p className="ic-footer">
           New to our parlor? <Link to="/register">Join the crew 🎉</Link>

@@ -1,0 +1,84 @@
+.gab-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 13px 20px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.97rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  transition:
+    transform 0.15s,
+    box-shadow 0.2s,
+    background 0.2s,
+    border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.gab-btn:active {
+  transform: scale(0.98);
+}
+
+/* ── Light theme (Customer login — white card) ── */
+.gab-btn--light {
+  background: #ffffff;
+  color: #3c3c3c;
+  border: 2px solid #f8bbd0;
+  box-shadow: 0 2px 10px rgba(244, 143, 177, 0.15);
+  font-family: "Nunito", sans-serif;
+}
+
+.gab-btn--light:hover {
+  background: #fff5f8;
+  border-color: #f06292;
+  box-shadow: 0 4px 18px rgba(240, 98, 146, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ── Dark theme (Delivery login — dark card) ── */
+.gab-btn--dark {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  font-family: "Barlow", sans-serif;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.gab-btn--dark:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ── Icon container ── */
+.gab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border-radius: 4px;
+  padding: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.gab-btn--light .gab-icon {
+  box-shadow: 0 1px 3px rgba(244, 143, 177, 0.2);
+}
+
+/* ── Text ── */
+.gab-text {
+  flex: 1;
+  text-align: center;
+  margin-right: 24px; /* optically centers text accounting for icon width */
+}

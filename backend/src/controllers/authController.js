@@ -97,6 +97,15 @@ export const loginUser = catchAsync(async (req, res, next) => {
     return next(new AppError("User not found or has been deleted", 401));
   }
 
+  if (user.authProvider === "google") {
+    return next(
+      new AppError(
+        "This account uses Google sign-in. Please continue with Google.",
+        400,
+      ),
+    );
+  }
+
   // Compare password
   const isMatch = await bcrypt.compare(password, user.password);
 
@@ -197,10 +206,14 @@ export const googleAuth = catchAsync(async (req, res, next) => {
 
   let user = await User.findOne({ email });
 
-  if (user && user.authProvider === "local") {
-    return next(
-      new AppError("This email is already registered with password login", 400),
-    );
+  if (user && user.authProvider === "local" && !user.isEmailVerified) {
+    return next(new AppError("Your email is not verified.", 403));
+  }
+
+  if (user && user.authProvider === "local" && user.isEmailVerified) {
+    user.googleId = googleId;
+    user.profilePicUrl = user.profilePicUrl || picture;
+    await user.save();
   }
 
   if (!user) {
@@ -244,6 +257,90 @@ export const googleAuth = catchAsync(async (req, res, next) => {
       username: user.username,
       email: user.email,
       role: user.role,
+    },
+  });
+});
+
+export const googleAuthToken = catchAsync(async (req, res, next) => {
+  const { accessToken } = req.body;
+
+  if (!accessToken) {
+    return next(new AppError("Google access token is required", 400));
+  }
+
+  // Fetch user info from Google using the access token
+  const response = await fetch(
+    "https://www.googleapis.com/oauth2/v3/userinfo",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+
+  if (!response.ok) {
+    return next(new AppError("Failed to verify Google token", 401));
+  }
+
+  const {
+    sub: googleId,
+    email,
+    name,
+    picture,
+    email_verified,
+  } = await response.json();
+
+  if (!email_verified) {
+    return next(new AppError("Google email not verified", 400));
+  }
+
+  let user = await User.findOne({ email });
+
+  if (user && user.authProvider === "local" && !user.isEmailVerified) {
+    return next(new AppError("Your email is not verified.", 403));
+  }
+
+  if (user && user.authProvider === "local" && user.isEmailVerified) {
+    user.googleId = googleId;
+    user.profilePicUrl = user.profilePicUrl || picture;
+    await user.save();
+  }
+
+  if (!user) {
+    user = await User.create({
+      username: name.replace(/\s+/g, "").toLowerCase() + Date.now(),
+      email,
+      googleId,
+      authProvider: "google",
+      isEmailVerified: true,
+      profilePicUrl: picture,
+    });
+  }
+
+  const token = generateToken(user);
+  const csrfToken = generateCsrfToken(token);
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    maxAge: 2 * 24 * 60 * 60 * 1000,
+  });
+
+  res.cookie("csrfToken", csrfToken, {
+    httpOnly: false,
+    secure: true,
+    sameSite: "None",
+    maxAge: 2 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Google authentication successful",
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      profilePicUrl: user.profilePicUrl,
     },
   });
 });

@@ -3,6 +3,8 @@ import Register from "../pages/Auth/Register";
 import Login from "../pages/Auth/Login";
 import VerifyEmail from "../pages/Auth/VerifyEmail";
 import LandingPage from "../pages/Home/LandingPage";
+import DeliveryLogin from "../pages/Auth/DeliveryLogin";
+import AdminLogin from "../pages/Auth/AdminLogin";
 
 function AppRoutes() {
   return (
@@ -12,6 +14,8 @@ function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/landing-page" element={<LandingPage />} />
+        <Route path="/delivery/login" element={<DeliveryLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
       </Routes>
     </BrowserRouter>
   );

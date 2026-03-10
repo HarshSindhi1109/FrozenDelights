@@ -4,7 +4,7 @@ import api from "../../services/api";
 import "./LandingPage.css";
 
 /* ─── helpers ─────────────────────────────────── */
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const imgSrc = (url) => (url ? `${BASE_URL}/${url.replace(/\\/g, "/")}` : null);
 
