@@ -7,6 +7,16 @@ import Otp from "../models/Otp.js";
 import { generateOtp } from "../utils/generateOtp.js";
 import { sendOtpEmail } from "../services/emailService.js";
 import { generateToken, generateCsrfToken } from "../utils/generateTokens.js";
+import fs from "fs";
+
+const deleteFileIfExists = async (filePath) => {
+  if (!filePath) return;
+  try {
+    if (fs.existsSync(filePath)) await fs.promises.unlink(filePath);
+  } catch (err) {
+    console.error("File deletion error:", err.message);
+  }
+};
 
 export const registerUser = catchAsync(async (req, res, next) => {
   const { username, email, password } = req.body;
@@ -343,4 +353,75 @@ export const googleAuthToken = catchAsync(async (req, res, next) => {
       profilePicUrl: user.profilePicUrl,
     },
   });
+});
+
+export const getMe = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  if (!user) return next(new AppError("User not found", 404));
+
+  res.status(200).json({ success: true, user });
+});
+
+export const updateMe = catchAsync(async (req, res, next) => {
+  const { username } = req.body;
+  if (!username?.trim()) return next(new AppError("Username is required", 400));
+
+  const exists = await User.findOne({
+    username: username.trim(),
+    _id: { $ne: req.user.id },
+  });
+  if (exists) return next(new AppError("Username already taken", 400));
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { username: username.trim() },
+    { new: true, runValidators: true },
+  );
+  res.status(200).json({ success: true, user });
+});
+
+export const changePassword = catchAsync(async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user.id).select("+password");
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch)
+    return next(new AppError("Current password is incorrect.", 401));
+
+  if (newPassword.length < 6)
+    return next(new AppError("Password must be at least 6 characters.", 400));
+
+  user.password = newPassword; // pre-save hook hashes it
+  user.authProvider = "local";
+  await user.save();
+  res.status(200).json({ success: true, message: "Password updated." });
+});
+
+export const updateAvatar = catchAsync(async (req, res, next) => {
+  const newFile = req.files?.profilePicture?.[0];
+  if (!newFile?.savedPath)
+    return next(new AppError("No valid image uploaded.", 400));
+
+  // Delete old avatar if it exists
+  const existing = await User.findById(req.user.id);
+  await deleteFileIfExists(existing.profilePicUrl);
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { profilePicUrl: newFile.savedPath },
+    { new: true },
+  );
+  res.status(200).json({ success: true, user });
+});
+
+export const deleteMe = catchAsync(async (req, res, next) => {
+  await User.findByIdAndUpdate(req.user.id, { isDeleted: true });
+  res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "None" });
+  res.clearCookie("csrfToken", {
+    httpOnly: false,
+    secure: true,
+    sameSite: "None",
+  });
+  res.status(200).json({ success: true, message: "Account deleted." });
 });

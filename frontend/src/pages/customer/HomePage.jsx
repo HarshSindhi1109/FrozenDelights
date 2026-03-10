@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import "./HomePage.css";
+import { logoutUser } from "../../services/authService";
 
 /* ─── helpers ─────────────────────────────── */
-const BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
-const imgSrc = (url) => (url ? `${BASE_URL}/${url.replace(/\\/g, "/")}` : null);
+const BASE_URL = import.meta.env.VITE_IMG_URL;
+const imgSrc = (url) => (url ? `${BASE_URL}/${url}` : null);
 
 const StarRating = ({ rating = 0, size = "sm" }) => {
   const full = Math.floor(rating);
@@ -92,6 +93,14 @@ const HomePage = () => {
   const searchRef = useRef(null);
 
   useScrollReveal([iceCreams, categories]);
+
+  /* ── Fetch user ── */
+  useEffect(() => {
+    api
+      .get("/auth/me")
+      .then((r) => setUser(r.data.user))
+      .catch(() => {});
+  }, []);
 
   /* ── Navbar scroll shadow ── */
   useEffect(() => {
@@ -213,9 +222,9 @@ const HomePage = () => {
   /* ── Logout ── */
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout");
+      await logoutUser();
     } catch (err) {
-      console.log("Error logging out:", err);
+      console.error(err);
     }
     navigate("/login");
   };
@@ -323,7 +332,7 @@ const HomePage = () => {
                   </div>
                   <div className="hp-nav-dropdown-divider" />
                   <Link
-                    to="/profile"
+                    to="/customer/profile"
                     className="hp-nav-dropdown-item"
                     onClick={() => setMenuOpen(false)}
                   >
@@ -337,7 +346,7 @@ const HomePage = () => {
                     📦 My Orders
                   </Link>
                   <Link
-                    to="/addresses"
+                    to="/customer/addresses"
                     className="hp-nav-dropdown-item"
                     onClick={() => setMenuOpen(false)}
                   >
@@ -736,7 +745,7 @@ const HomePage = () => {
             </Link>
 
             <Link
-              to="/addresses"
+              to="/customer/addresses"
               className="hp-quick-card hp-quick-card--address"
             >
               <span className="hp-quick-icon">📍</span>
@@ -781,7 +790,7 @@ const HomePage = () => {
             </Link>
 
             <Link
-              to="/profile"
+              to="/customer/profile"
               className="hp-quick-card hp-quick-card--profile"
             >
               <span className="hp-quick-icon">👤</span>

@@ -6,6 +6,8 @@ import LandingPage from "../pages/Home/LandingPage";
 import DeliveryLogin from "../pages/Auth/DeliveryLogin";
 import AdminLogin from "../pages/Auth/AdminLogin";
 import HomePage from "../pages/customer/HomePage";
+import Profile from "../pages/customer/Profile";
+import Addresses from "../pages/customer/Addresses";
 
 function AppRoutes() {
   return (
@@ -19,6 +21,8 @@ function AppRoutes() {
         <Route path="/admin/login" element={<AdminLogin />} />
 
         <Route path="/customer/home" element={<HomePage />} />
+        <Route path="/customer/profile" element={<Profile />} />
+        <Route path="/customer/addresses" element={<Addresses />} />
       </Routes>
     </BrowserRouter>
   );
