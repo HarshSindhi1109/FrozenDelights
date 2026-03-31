@@ -65,6 +65,33 @@ const OrderSchema = new mongoose.Schema(
       min: 0,
     },
 
+    deliveryFee: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+
+    tip: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    distanceKm: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    deliveryFeeBreakdown: {
+      basePay: { type: Number, default: 0 },
+      distancePay: { type: Number, default: 0 },
+      surgeBonus: { type: Number, default: 0 },
+      surgeEnabled: { type: Boolean, default: false },
+      surgeMultiplier: { type: Number, default: 1 },
+    },
+
     paymentMethod: {
       type: String,
       enum: ["razorpay", "cod"],
@@ -172,27 +199,26 @@ const OrderSchema = new mongoose.Schema(
 );
 
 OrderSchema.pre("save", function (next) {
-  for (const item of this.items) {
-    if (item.subtotal !== item.priceAtPurchase * item.quantity) {
-      return next(new Error("Invalid subtotal calculation"));
+  if (this.isNew) {
+    for (const item of this.items) {
+      if (item.subtotal !== item.priceAtPurchase * item.quantity) {
+        return next(new Error("Invalid subtotal calculation"));
+      }
     }
-  }
 
-  const calculatedTotal = this.items.reduce(
-    (sum, item) => sum + item.subtotal,
-    0,
-  );
+    const itemsTotal = this.items.reduce((sum, item) => sum + item.subtotal, 0);
 
-  if (this.totalAmount !== calculatedTotal) {
-    return next(new Error("Total amount mismatch"));
-  }
+    const expectedTotal =
+      itemsTotal + (this.deliveryFee || 0) + (this.tip || 0);
 
-  if (!this.orderNumber) {
+    if (this.totalAmount !== expectedTotal) {
+      return next(new Error("Total amount mismatch"));
+    }
+
     const genereatedId = customAlphabet(
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
       8,
     );
-
     this.orderNumber = "ORD-" + genereatedId();
   }
 

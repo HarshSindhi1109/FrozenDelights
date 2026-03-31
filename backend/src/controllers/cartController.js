@@ -69,7 +69,7 @@ export const getCart = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
 
   const cart = await Cart.findOne({ userId })
-    .populate("items.iceCreamId", "name imageUrl")
+    .populate("items.iceCreamId", "name imageUrl variants")
     .lean();
 
   if (!cart) {
@@ -95,7 +95,7 @@ export const updateCartItem = catchAsync(async (req, res, next) => {
       new AppError("iceCreamId, size and quantity are required", 400),
     );
   }
-  
+
   const cart = await Cart.findOne({ userId });
 
   if (!cart) {
@@ -110,6 +110,18 @@ export const updateCartItem = catchAsync(async (req, res, next) => {
 
   if (!item) {
     return next(new AppError("Item not found in cart", 404));
+  }
+
+  const iceCream = await IceCream.findById(iceCreamId);
+  if (iceCream) {
+    const variant = iceCream.variants.find(
+      (v) => v.size.toLowerCase() === size.toLowerCase(),
+    );
+    if (variant && quantity > variant.stock) {
+      return next(
+        new AppError(`Only ${variant.stock} in stock for this size`, 400),
+      );
+    }
   }
 
   item.quantity = quantity;

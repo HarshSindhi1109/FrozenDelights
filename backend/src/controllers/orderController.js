@@ -6,11 +6,12 @@ import AppError from "../utils/AppError.js";
 import { createEarningForDeliveredOrder } from "../services/deliveryEarningService.js";
 import DeliveryPerson from "../models/DeliveryPerson.js";
 import { dispatchOrderToDelivery } from "../services/orderDispatchService.js";
+import { calculateDeliveryFee } from "../services/deliveryFeeService.js";
 
 // Create Order (Customer)
 export const createOrder = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
-  const { items, paymentMethod, deliveryAddress } = req.body;
+  const { items, paymentMethod, deliveryAddress, tip: rawTip } = req.body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return next(new AppError("Order items are required.", 400));
@@ -71,6 +72,22 @@ export const createOrder = catchAsync(async (req, res, next) => {
     totalAmount += subtotal;
   }
 
+  const coords = deliveryAddress?.location?.coordinates;
+  if (!coords || coords.length < 2) {
+    return next(
+      new AppError("Delivery address must include GPS coordinates.", 400),
+    );
+  }
+
+  const feeBreakdown = await calculateDeliveryFee({
+    customerLat: coords[1],
+    customerLng: coords[0],
+  });
+
+  const deliveryFee = feeBreakdown.deliveryFee;
+  const tip = Math.max(0, parseInt(rawTip) || 0);
+  totalAmount += deliveryFee + tip;
+
   let paymentStatus = "pending";
   let orderStatus = "pending";
 
@@ -83,6 +100,16 @@ export const createOrder = catchAsync(async (req, res, next) => {
     userId,
     items: orderItems,
     totalAmount,
+    deliveryFee,
+    tip,
+    distanceKm: feeBreakdown.distanceKm,
+    deliveryFeeBreakdown: {
+      basePay: feeBreakdown.basePay,
+      distancePay: feeBreakdown.distancePay,
+      surgeBonus: feeBreakdown.surgeBonus,
+      surgeEnabled: feeBreakdown.surgeEnabled,
+      surgeMultiplier: feeBreakdown.surgeMultiplier,
+    },
     paymentMethod,
     paymentStatus,
     status: orderStatus,

@@ -3,17 +3,19 @@ import DeliveryEarning from "../models/DeliveryEarning.js";
 export const createEarningForDeliveredOrder = async (order) => {
   if (!order.deliveryPersonId) return;
 
-  const existing = await DeliveryEarning.findOne({
-    orderId: order._id,
-  });
-
+  // Idempotency guard — never create duplicate earnings for the same order
+  const existing = await DeliveryEarning.findOne({ orderId: order._id });
   if (existing) return;
 
-  // For now, static data
-  const basePay = 40; // example logic
-  const distancePay = order.distance * 5;
-  const surgeBonus = order.isSurge ? 20 : 0;
-  const tipAmount = order.tipAmount || 0;
+  // Read the fee breakdown that was FROZEN onto the order at creation time.
+  // This guarantees the delivery person earns exactly what the customer paid —
+  // no recalculation, no drift if admin changes rates between order and delivery.
+  const breakdown = order.deliveryFeeBreakdown || {};
+
+  const basePay = breakdown.basePay ?? 0;
+  const distancePay = breakdown.distancePay ?? 0;
+  const surgeBonus = breakdown.surgeBonus ?? 0;
+  const tipAmount = order.tip ?? 0;
 
   const totalEarning = basePay + distancePay + surgeBonus + tipAmount;
 

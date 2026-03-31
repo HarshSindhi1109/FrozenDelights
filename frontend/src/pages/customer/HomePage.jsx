@@ -295,7 +295,7 @@ const HomePage = () => {
           </div>
 
           <div className="hp-nav-right">
-            <Link to="/cart" className="hp-nav-cart">
+            <Link to="/customer/cart" className="hp-nav-cart">
               <svg
                 width="22"
                 height="22"
@@ -339,7 +339,7 @@ const HomePage = () => {
                     👤 My Profile
                   </Link>
                   <Link
-                    to="/orders"
+                    to="/customer/orders"
                     className="hp-nav-dropdown-item"
                     onClick={() => setMenuOpen(false)}
                   >
@@ -725,7 +725,7 @@ const HomePage = () => {
         {/* ════════ QUICK LINKS ════════ */}
         <section className="hp-section hp-quick-section hp-reveal">
           <div className="hp-quick-grid">
-            <Link to="/orders" className="hp-quick-card hp-quick-card--orders">
+            <Link to="/customer/orders" className="hp-quick-card hp-quick-card--orders">
               <span className="hp-quick-icon">📦</span>
               <div className="hp-quick-text">
                 <strong>My Orders</strong>
@@ -766,7 +766,7 @@ const HomePage = () => {
               </svg>
             </Link>
 
-            <Link to="/cart" className="hp-quick-card hp-quick-card--cart">
+            <Link to="/customer/cart" className="hp-quick-card hp-quick-card--cart">
               <span className="hp-quick-icon">🛒</span>
               <div className="hp-quick-text">
                 <strong>My Cart</strong>
@@ -826,8 +826,8 @@ const HomePage = () => {
           </p>
           <div className="hp-footer-links">
             <a href="#top">Home</a>
-            <Link to="/orders">Orders</Link>
-            <Link to="/cart">Cart</Link>
+            <Link to="/customer/orders">Orders</Link>
+            <Link to="/customer/cart">Cart</Link>
           </div>
         </div>
       </footer>

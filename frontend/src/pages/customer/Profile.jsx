@@ -596,13 +596,13 @@ const Profile = () => {
 
             <div className="pf-shortcut-list">
               {[
-                { to: "/orders", icon: "📦", label: "My Orders" },
+                { to: "/customer/orders", icon: "📦", label: "My Orders" },
                 {
                   to: "/customer/addresses",
                   icon: "📍",
                   label: "Saved Addresses",
                 },
-                { to: "/cart", icon: "🛒", label: "My Cart" },
+                { to: "/customer/cart", icon: "🛒", label: "My Cart" },
               ].map(({ to, icon, label }) => (
                 <Link key={to} to={to} className="pf-shortcut">
                   <span>{icon}</span>
