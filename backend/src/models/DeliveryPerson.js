@@ -145,7 +145,7 @@ DeliveryPersonSchema.methods.getDecryptedBankDetails = function () {
 
 DeliveryPersonSchema.methods.toSafeObject = function () {
   return {
-    id: this._id,
+    id: this._id.toString(),
     fullname: this.fullname,
     phone: this.phone,
     vehicleType: this.vehicleType,
@@ -156,6 +156,7 @@ DeliveryPersonSchema.methods.toSafeObject = function () {
     bankDetails: this.getDecryptedBankDetails(),
     averageRating: this.averageRating,
     totalReviews: this.totalReviews,
+    availability: this.availability,
     status: this.status,
   };
 };

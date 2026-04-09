@@ -10,6 +10,7 @@ import {
   rejectDelivery,
   pickupOrder,
   deliverOrder,
+  getPendingDeliveryRequests,
 } from "../controllers/orderController.js";
 import {
   protect,
@@ -20,7 +21,17 @@ import {
 const router = express.Router();
 
 // Customer Routes
+router.get("/", protect, authorize("admin"), getAllOrders);
 router.get("/my", protect, getMyOrders);
+
+// Delivery Person — polling endpoint (must be before /:id to avoid conflict)
+router.get(
+  "/pending-requests",
+  protect,
+  authorize("delivery_man"),
+  getPendingDeliveryRequests,
+);
+
 router.get("/:id", protect, getOrderById);
 
 router.post("/", protect, verifyCSRF, createOrder);
@@ -60,7 +71,6 @@ router.patch(
 );
 
 // Admin Routes
-router.get("/", protect, authorize("admin"), getAllOrders);
 router.patch(
   "/:id",
   protect,

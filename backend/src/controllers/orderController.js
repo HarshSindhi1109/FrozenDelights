@@ -7,6 +7,7 @@ import { createEarningForDeliveredOrder } from "../services/deliveryEarningServi
 import DeliveryPerson from "../models/DeliveryPerson.js";
 import { dispatchOrderToDelivery } from "../services/orderDispatchService.js";
 import { calculateDeliveryFee } from "../services/deliveryFeeService.js";
+import Notification from "../models/Notification.js";
 
 // Create Order (Customer)
 export const createOrder = catchAsync(async (req, res, next) => {
@@ -222,21 +223,30 @@ export const getOrderById = catchAsync(async (req, res, next) => {
     .populate("userId", "name email")
     .populate("items.iceCreamId", "imageUrl");
 
-  if (!order) {
-    return next(new AppError("Order not found.", 404));
+  if (!order) return next(new AppError("Order not found.", 404));
+
+  const isCustomer = order.userId._id.toString() === req.user.id;
+  const isAdmin = req.user.role === "admin";
+
+  let isDeliveryPerson = false;
+  if (req.user.role === "delivery_man") {
+    if (order.status === "delivery_requested") {
+      isDeliveryPerson = true; // can view to decide
+    } else {
+      // check if they are the assigned rider
+      const dp = await DeliveryPerson.findOne({ userId: req.user.id }).select(
+        "_id",
+      );
+      isDeliveryPerson =
+        dp && order.deliveryPersonId?.toString() === dp._id.toString();
+    }
   }
 
-  if (
-    order.userId._id.toString() !== req.user.id &&
-    req.user.role !== "admin"
-  ) {
+  if (!isCustomer && !isAdmin && !isDeliveryPerson) {
     return next(new AppError("Not authorized.", 403));
   }
 
-  res.status(200).json({
-    success: true,
-    data: order,
-  });
+  res.status(200).json({ success: true, data: order });
 });
 
 // Cancel Order (Customer)
@@ -327,15 +337,53 @@ export const updateOrderStatus = catchAsync(async (req, res, next) => {
     previousStatus !== "delivery_requested" &&
     status === "delivery_requested"
   ) {
-    const pickupLocation = [72.5714, 22.3072];
-
+    const pickupLocation = [70.7783, 22.2903];
+    console.log("🚀 Dispatching order to delivery...", order._id);
     await dispatchOrderToDelivery(order, pickupLocation);
+    console.log("✅ Dispatch complete");
   }
 
   res.status(200).json({
     success: true,
     data: order,
   });
+});
+
+// ─────────────────────────────────────────────────────────────
+// GET /orders/pending-requests  (Delivery Person — polling)
+// Returns orders with status "delivery_requested" that this
+// rider has been notified about and has not yet rejected.
+// ─────────────────────────────────────────────────────────────
+export const getPendingDeliveryRequests = catchAsync(async (req, res, next) => {
+  const deliveryPerson = await DeliveryPerson.findOne({ userId: req.user.id });
+
+  if (!deliveryPerson) {
+    return next(new AppError("Delivery profile not found", 404));
+  }
+
+  // Find notifications for this rider that relate to active delivery_requested orders
+  const notifications = await Notification.find({
+    recipientId: deliveryPerson._id,
+    recipientType: "DeliveryPerson",
+    type: "new_order",
+  }).select("relatedOrderId");
+
+  const notifiedOrderIds = notifications.map((n) => n.relatedOrderId);
+
+  // Return only orders that:
+  // 1. Are still waiting for a rider (status = delivery_requested, no deliveryPersonId)
+  // 2. This rider was notified about
+  // 3. This rider hasn't already rejected
+  const orders = await Order.find({
+    _id: { $in: notifiedOrderIds },
+    status: "delivery_requested",
+    deliveryPersonId: null,
+    rejectedBy: { $nin: [deliveryPerson._id] },
+  }).select(
+    "orderNumber totalAmount tip distanceKm deliveryAddress items deliveryFeeBreakdown",
+  );
+
+  res.status(200).json({ success: true, data: orders });
 });
 
 // Accept Delivery (DeliveryPerson)
@@ -428,7 +476,7 @@ export const rejectDelivery = catchAsync(async (req, res, next) => {
   await order.save();
 
   // dispatch to other drivers
-  await dispatchOrderToDelivery(order, [72.5714, 22.3072]);
+  await dispatchOrderToDelivery(order, [70.7783, 22.2903]);
 
   res.status(200).json({
     success: true,

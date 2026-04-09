@@ -30,7 +30,6 @@ import { startDailyPayoutJob } from "./jobs/dailyPayoutJob.js";
 import { razorpayWebhook } from "./controllers/webhookController.js";
 import deliveryEarningRoutes from "./routes/deliveryEarningRoutes.js";
 import dailyPayoutRoutes from "./routes/dailyPayoutRoutes.js";
-import { initSocketServer } from "./sockets/socketServer.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import addressRoutes from "./routes/addressRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
@@ -127,9 +126,6 @@ const startServer = async () => {
     };
 
     const httpsServer = https.createServer(options, app);
-
-    // initialize socket server
-    initSocketServer(httpsServer);
 
     httpsServer.listen(PORT, () => {
       console.log(`HTTPS server running at https://localhost:${PORT}`);

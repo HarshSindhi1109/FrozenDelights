@@ -1,9 +1,10 @@
 import Notification from "../models/Notification.js";
 import Order from "../models/Order.js";
-import { getIo, getDeliverySocket } from "../sockets/socketServer.js";
 import { findNearestDeliveryPersons } from "./deliveryAssignmentService.js";
 
 export const dispatchOrderToDelivery = async (order, pickupLocation) => {
+  console.log("📦 dispatchOrderToDelivery called for", order.orderNumber);
+
   const excludedDrivers = [
     ...(order.notifiedDeliveryPersons || []),
     ...(order.rejectedBy || []),
@@ -13,6 +14,8 @@ export const dispatchOrderToDelivery = async (order, pickupLocation) => {
     pickupLocation,
     excludedDrivers,
   );
+
+  console.log("👥 Found delivery persons:", deliveryPersons.length);
 
   if (deliveryPersons.length === 0) {
     order.dispatchAttempts += 1;
@@ -32,8 +35,6 @@ export const dispatchOrderToDelivery = async (order, pickupLocation) => {
     return;
   }
 
-  const io = getIo();
-
   order.dispatchStatus = "waiting";
 
   for (const delivery of deliveryPersons) {
@@ -45,8 +46,7 @@ export const dispatchOrderToDelivery = async (order, pickupLocation) => {
       order.notifiedDeliveryPersons.push(delivery._id);
     }
 
-    const socketId = getDeliverySocket(delivery._id.toString());
-
+    // Create notification — this is what the polling endpoint reads
     await Notification.create({
       recipientId: delivery._id,
       recipientType: "DeliveryPerson",
@@ -55,20 +55,12 @@ export const dispatchOrderToDelivery = async (order, pickupLocation) => {
       message: `Order ${order.orderNumber} available`,
       relatedOrderId: order._id,
     });
-
-    if (socketId) {
-      io.to(socketId).emit("newOrderRequest", {
-        orderId: order._id,
-        orderNumber: order.orderNumber,
-        totalAmount: order.totalAmount,
-      });
-    }
   }
 
   order.dispatchAttempts += 1;
   await order.save();
 
-  // Retry fallback
+  // Retry fallback — in case no rider accepts within 20 seconds
   const attemptNumber = order.dispatchAttempts;
 
   setTimeout(() => {
@@ -84,11 +76,8 @@ export const retryDispatchIfNeeded = async (
   const order = await Order.findById(orderId);
 
   if (!order) return;
-
   if (order.deliveryPersonId) return;
-
   if (order.status !== "delivery_requested") return;
-
   if (order.dispatchAttempts !== attemptNumber) return;
 
   if (order.dispatchAttempts >= 5) {

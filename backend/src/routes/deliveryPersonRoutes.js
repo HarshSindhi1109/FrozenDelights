@@ -7,6 +7,8 @@ import {
   approveDeliveryPerson,
   rejectDeliveryPerson,
   suspendDeliveryPerson,
+  updateAvailability,
+  updateLocation,
 } from "../controllers/deliveryPersonController.js";
 import {
   authorize,
@@ -37,6 +39,23 @@ router.post(
 
 // delivery person routes
 router.get("/me", protect, authorize("delivery_man"), getMyDeliveryProfile);
+
+router.patch(
+  "/availability",
+  protect,
+  verifyCSRF,
+  authorize("delivery_man"),
+  updateAvailability,
+);
+
+// Location update — called by useOrderPolling on every GPS change
+router.patch(
+  "/location",
+  protect,
+  verifyCSRF,
+  authorize("delivery_man"),
+  updateLocation,
+);
 
 router.patch(
   "/",

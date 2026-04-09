@@ -159,6 +159,80 @@ export const updateDeliveryProfile = catchAsync(async (req, res, next) => {
   });
 });
 
+/* --------------------------------------------------- */
+/* Update Availability (online / offline) */
+/* --------------------------------------------------- */
+
+export const updateAvailability = catchAsync(async (req, res, next) => {
+  const { availability } = req.body;
+
+  if (!["online", "offline"].includes(availability)) {
+    return next(
+      new AppError("Availability must be 'online' or 'offline'", 400),
+    );
+  }
+
+  const deliveryPerson = await DeliveryPerson.findOne({ userId: req.user.id });
+
+  if (!deliveryPerson) {
+    return next(new AppError("Delivery profile not found", 404));
+  }
+
+  if (deliveryPerson.status !== "active") {
+    return next(
+      new AppError("Only active delivery persons can change availability", 403),
+    );
+  }
+
+  if (deliveryPerson.availability === "busy") {
+    return next(
+      new AppError(
+        "Cannot change availability while on an active delivery",
+        400,
+      ),
+    );
+  }
+
+  deliveryPerson.availability = availability;
+  await deliveryPerson.save();
+
+  res.status(200).json({
+    success: true,
+    message: `You are now ${availability}`,
+    data: { availability },
+  });
+});
+
+/* --------------------------------------------------- */
+/* Update Location (called by useOrderPolling GPS watch) */
+/* --------------------------------------------------- */
+
+export const updateLocation = catchAsync(async (req, res, next) => {
+  const { coordinates } = req.body; // expects [longitude, latitude]
+
+  if (
+    !Array.isArray(coordinates) ||
+    coordinates.length !== 2 ||
+    coordinates.some((c) => typeof c !== "number")
+  ) {
+    return next(new AppError("coordinates must be [longitude, latitude]", 400));
+  }
+
+  const deliveryPerson = await DeliveryPerson.findOneAndUpdate(
+    { userId: req.user.id },
+    {
+      location: { type: "Point", coordinates },
+      lastLocationUpdate: new Date(),
+    },
+  );
+
+  if (!deliveryPerson) {
+    return next(new AppError("Delivery profile not found", 404));
+  }
+
+  res.status(200).json({ success: true });
+});
+
 /* =================================================== */
 /* ADMIN CONTROLLERS */
 /* =================================================== */
@@ -170,7 +244,7 @@ export const getAllDeliveryPersons = catchAsync(async (req, res, next) => {
 
   const deliveryPersons = await DeliveryPerson.find()
     .select(
-      "fullname phone vehicleType averageRating totalReviews status suspension createdAt",
+      "fullname phone vehicleType averageRating totalReviews availability status suspension createdAt",
     )
     .populate("userId", "email role")
     .skip(skip)
