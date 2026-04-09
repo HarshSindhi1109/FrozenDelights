@@ -16,7 +16,8 @@ export const createDeliveryRating = catchAsync(async (req, res, next) => {
     return next(new AppError("You are not authorized to rate this order", 403));
   }
 
-  if (order.status !== "Delivered") {
+  // Fix: was "Delivered" (capital D) — should be "delivered"
+  if (order.status !== "delivered") {
     return next(
       new AppError("You can rate delivery only after order is delivered", 400),
     );
@@ -50,7 +51,7 @@ export const createDeliveryRating = catchAsync(async (req, res, next) => {
   });
 });
 
-// Get Delivery persons' ratings
+// Get delivery person's ratings (public)
 export const getDeliveryRatings = catchAsync(async (req, res) => {
   const ratings = await DeliveryRating.find({
     deliveryPersonId: req.params.deliveryPersonId,
@@ -62,6 +63,19 @@ export const getDeliveryRatings = catchAsync(async (req, res) => {
     success: true,
     count: ratings.length,
     data: ratings,
+  });
+});
+
+// Check if current user already rated delivery for a specific order
+export const getMyDeliveryRatingForOrder = catchAsync(async (req, res) => {
+  const existing = await DeliveryRating.findOne({
+    userId: req.user.id,
+    orderId: req.params.orderId,
+  });
+
+  res.status(200).json({
+    success: true,
+    data: existing || null,
   });
 });
 

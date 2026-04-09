@@ -74,7 +74,6 @@ const PAYMENT_STATUS_CONFIG = {
   cod_paid: { label: "COD Collected", cls: "or-pay-badge--cod_paid" },
 };
 
-// Ordered tracker steps (cancelled has its own branch)
 const TRACKER_STEPS = [
   "pending",
   "confirmed",
@@ -95,6 +94,19 @@ const FILTER_OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+const RATING_LABELS = {
+  0.5: "Terrible",
+  1: "Bad",
+  1.5: "Poor",
+  2: "Meh",
+  2.5: "Okay",
+  3: "Good",
+  3.5: "Pretty good",
+  4: "Great",
+  4.5: "Excellent",
+  5: "Perfect!",
+};
+
 /* ══════════════════════════════════════════
    STATUS BADGE
 ══════════════════════════════════════════ */
@@ -114,6 +126,72 @@ const StatusBadge = ({ status }) => {
 const PaymentBadge = ({ status }) => {
   const cfg = PAYMENT_STATUS_CONFIG[status] || { label: status, cls: "" };
   return <span className={`or-pay-badge ${cfg.cls}`}>{cfg.label}</span>;
+};
+
+/* ══════════════════════════════════════════
+   STAR INPUT (interactive)
+══════════════════════════════════════════ */
+const StarInput = ({ value, onChange }) => {
+  const [hovered, setHovered] = useState(0);
+
+  const handleMouseMove = (e, i) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHovered(e.clientX - rect.left < rect.width / 2 ? i - 0.5 : i);
+  };
+
+  const handleClick = (e, i) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    onChange(e.clientX - rect.left < rect.width / 2 ? i - 0.5 : i);
+  };
+
+  const display = hovered || value;
+
+  return (
+    <div>
+      <div className="or-stars-row" onMouseLeave={() => setHovered(0)}>
+        {[1, 2, 3, 4, 5].map((i) => {
+          let cls = "or-star or-star--empty";
+          if (display >= i) cls = "or-star or-star--full";
+          else if (display >= i - 0.5) cls = "or-star or-star--half";
+          return (
+            <span
+              key={i}
+              className={cls}
+              onMouseMove={(e) => handleMouseMove(e, i)}
+              onClick={(e) => handleClick(e, i)}
+            >
+              {display >= i ? "★" : display >= i - 0.5 ? "⯨" : "☆"}
+            </span>
+          );
+        })}
+      </div>
+      <div className="or-rating-hint">
+        {display
+          ? `${display} — ${RATING_LABELS[display] || ""}`
+          : "Click or hover to rate"}
+      </div>
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════
+   STAR DISPLAY (static)
+══════════════════════════════════════════ */
+const StarDisplay = ({ rating = 0 }) => {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  return (
+    <span className="or-stars-display">
+      {Array.from({ length: 5 }, (_, i) => (
+        <span
+          key={i}
+          className={`or-star ${i < full ? "or-star--full" : i === full && half ? "or-star--half" : "or-star--empty"}`}
+        >
+          {i < full ? "★" : i === full && half ? "⯨" : "☆"}
+        </span>
+      ))}
+    </span>
+  );
 };
 
 /* ══════════════════════════════════════════
@@ -169,26 +247,14 @@ const OrderTracker = ({ status }) => {
                   />
                 )}
                 <div
-                  className={`or-tracker-dot${
-                    done
-                      ? " or-tracker-dot--done"
-                      : active
-                        ? " or-tracker-dot--active"
-                        : ""
-                  }`}
+                  className={`or-tracker-dot${done ? " or-tracker-dot--done" : active ? " or-tracker-dot--active" : ""}`}
                 >
                   {done ? "✓" : cfg.icon}
                 </div>
               </div>
               <div className="or-tracker-right">
                 <p
-                  className={`or-tracker-label${
-                    active
-                      ? " or-tracker-label--active"
-                      : done
-                        ? " or-tracker-label--done"
-                        : ""
-                  }`}
+                  className={`or-tracker-label${active ? " or-tracker-label--active" : done ? " or-tracker-label--done" : ""}`}
                 >
                   {cfg.label}
                 </p>
@@ -197,6 +263,380 @@ const OrderTracker = ({ status }) => {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+};
+
+/* ══════════════════════════════════════════
+   REVIEW SECTION (shown inside OrderDetail when delivered)
+══════════════════════════════════════════ */
+const ReviewSection = ({ order, showToast }) => {
+  // ── Ice cream reviews state ──
+  const [existingReviews, setExistingReviews] = useState({}); // { iceCreamId: reviewDoc }
+  const [reviewLoading, setReviewLoading] = useState(true);
+
+  // active review form state: null | { iceCreamId, name, imageUrl, size, existingId }
+  const [activeIceForm, setActiveIceForm] = useState(null);
+  const [iceRating, setIceRating] = useState(0);
+  const [iceDesc, setIceDesc] = useState("");
+  const [iceSubmitting, setIceSubmitting] = useState(false);
+
+  // ── Delivery rating state ──
+  const [deliveryRating, setDeliveryRating] = useState(null); // existing doc or null
+  const [showDeliveryForm, setShowDeliveryForm] = useState(false);
+  const [drRating, setDrRating] = useState(0);
+  const [drDesc, setDrDesc] = useState("");
+  const [drSubmitting, setDrSubmitting] = useState(false);
+
+  /* Fetch existing reviews for this order's ice creams + delivery rating */
+  const fetchReviews = useCallback(async () => {
+    setReviewLoading(true);
+    try {
+      const iceCreamIds = [
+        ...new Set(
+          order.items.map((i) =>
+            typeof i.iceCreamId === "object" ? i.iceCreamId._id : i.iceCreamId,
+          ),
+        ),
+      ];
+
+      const [reviewResults, drRes] = await Promise.all([
+        Promise.allSettled(iceCreamIds.map((id) => api.get(`/reviews/${id}`))),
+        api.get(`/delivery-ratings/my-order/${order._id}`),
+      ]);
+
+      // Build map of iceCreamId → my review
+      const map = {};
+      const meRes = await api.get("/auth/me");
+      const myId = meRes.data.user._id;
+
+      reviewResults.forEach((r, idx) => {
+        if (r.status === "fulfilled") {
+          const mine = (r.value.data.data || []).find((rv) => {
+            const uid =
+              typeof rv.userId === "object" ? rv.userId._id : rv.userId;
+            return uid === myId;
+          });
+          if (mine) map[iceCreamIds[idx]] = mine;
+        }
+      });
+
+      setExistingReviews(map);
+      setDeliveryRating(drRes.data.data);
+    } catch (err) {
+      console.error("ReviewSection fetch error:", err);
+    } finally {
+      setReviewLoading(false);
+    }
+  }, [order._id, order.items]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
+  /* Open ice cream form */
+  const openIceForm = (item, existing) => {
+    const id =
+      typeof item.iceCreamId === "object"
+        ? item.iceCreamId._id
+        : item.iceCreamId;
+    setActiveIceForm({
+      iceCreamId: id,
+      name: item.name,
+      imageUrl: imgSrc(
+        typeof item.iceCreamId === "object" ? item.iceCreamId.imageUrl : null,
+      ),
+      size: item.size,
+      existingId: existing?._id || null,
+    });
+    setIceRating(existing?.rating || 0);
+    setIceDesc(existing?.description || "");
+  };
+
+  const closeIceForm = () => {
+    setActiveIceForm(null);
+    setIceRating(0);
+    setIceDesc("");
+  };
+
+  const submitIceReview = async () => {
+    if (!iceRating) return;
+    setIceSubmitting(true);
+    try {
+      if (activeIceForm.existingId) {
+        await api.put(`/reviews/${activeIceForm.existingId}`, {
+          rating: iceRating,
+          description: iceDesc.trim(),
+        });
+        showToast("Review updated!");
+      } else {
+        await api.post("/reviews", {
+          iceCreamId: activeIceForm.iceCreamId,
+          orderId: order._id,
+          rating: iceRating,
+          description: iceDesc.trim(),
+        });
+        showToast("Review posted!");
+      }
+      closeIceForm();
+      fetchReviews();
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Failed to submit review",
+        "error",
+      );
+    } finally {
+      setIceSubmitting(false);
+    }
+  };
+
+  /* Open delivery form */
+  const openDeliveryForm = () => {
+    setDrRating(deliveryRating?.rating || 0);
+    setDrDesc(deliveryRating?.description || "");
+    setShowDeliveryForm(true);
+  };
+
+  const submitDeliveryRating = async () => {
+    if (!drRating) return;
+    setDrSubmitting(true);
+    try {
+      if (deliveryRating) {
+        await api.put(`/delivery-ratings/${deliveryRating._id}`, {
+          rating: drRating,
+          description: drDesc.trim(),
+        });
+        showToast("Delivery rating updated!");
+      } else {
+        await api.post("/delivery-ratings", {
+          orderId: order._id,
+          deliveryPersonId: order.deliveryPersonId,
+          rating: drRating,
+          description: drDesc.trim(),
+        });
+        showToast("Delivery rated! 🛵");
+      }
+      setShowDeliveryForm(false);
+      fetchReviews();
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Failed to submit rating",
+        "error",
+      );
+    } finally {
+      setDrSubmitting(false);
+    }
+  };
+
+  if (reviewLoading) {
+    return (
+      <div className="or-section">
+        <div className="or-section-hd">
+          <h2>
+            <span>⭐</span> Rate Your Experience
+          </h2>
+        </div>
+        <div className="or-review-loading">
+          <div className="or-spin or-spin--pink" />
+          <span>Loading…</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="or-section">
+      <div className="or-section-hd">
+        <h2>
+          <span>⭐</span> Rate Your Experience
+        </h2>
+      </div>
+      <div className="or-section-body">
+        {/* ── Ice Cream Reviews ── */}
+        <div className="or-review-block-title">🍦 Ice Cream Reviews</div>
+        {order.items.map((item) => {
+          const id =
+            typeof item.iceCreamId === "object"
+              ? item.iceCreamId._id
+              : item.iceCreamId;
+          const existing = existingReviews[id];
+          const src = imgSrc(
+            typeof item.iceCreamId === "object"
+              ? item.iceCreamId.imageUrl
+              : null,
+          );
+          const isOpen = activeIceForm?.iceCreamId === id;
+
+          return (
+            <div key={`${id}-${item.size}`} className="or-review-item">
+              <div className="or-review-item-top">
+                <div className="or-review-item-img">
+                  {src ? (
+                    <img
+                      src={src}
+                      alt=""
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  ) : (
+                    "🍦"
+                  )}
+                </div>
+                <div className="or-review-item-info">
+                  <div className="or-review-item-name">{item.name}</div>
+                  <div className="or-review-item-size">
+                    {item.size} · qty {item.quantity}
+                  </div>
+                  {existing && !isOpen && (
+                    <div className="or-review-item-rated">
+                      <StarDisplay rating={existing.rating} />
+                      <span className="or-review-item-rated-num">
+                        {existing.rating}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {!isOpen && (
+                  <button
+                    className={`or-btn ${existing ? "or-btn--ghost" : "or-btn--primary"} or-btn--sm`}
+                    onClick={() => openIceForm(item, existing)}
+                  >
+                    {existing ? "Edit" : "Rate"}
+                  </button>
+                )}
+              </div>
+
+              {/* Inline form */}
+              {isOpen && (
+                <div className="or-review-form">
+                  <StarInput value={iceRating} onChange={setIceRating} />
+                  <textarea
+                    className="or-review-textarea"
+                    placeholder="Share your thoughts… taste, texture, packaging?"
+                    value={iceDesc}
+                    onChange={(e) => setIceDesc(e.target.value.slice(0, 500))}
+                  />
+                  <div className="or-review-char">
+                    {500 - iceDesc.length} chars left
+                  </div>
+                  <div className="or-review-form-btns">
+                    <button
+                      className="or-btn or-btn--ghost or-btn--sm"
+                      onClick={closeIceForm}
+                      disabled={iceSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="or-btn or-btn--primary or-btn--sm"
+                      onClick={submitIceReview}
+                      disabled={iceSubmitting || !iceRating}
+                    >
+                      {iceSubmitting ? (
+                        <>
+                          <span className="or-spin" /> Saving…
+                        </>
+                      ) : activeIceForm.existingId ? (
+                        "Update"
+                      ) : (
+                        "Post Review"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* ── Delivery Rating ── */}
+        {order.deliveryPersonId && (
+          <>
+            <div className="or-review-divider" />
+            <div className="or-review-block-title">🛵 Delivery Rating</div>
+            <div className="or-review-item">
+              <div className="or-review-item-top">
+                <div
+                  className="or-review-item-img"
+                  style={{
+                    fontSize: "1.6rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  🛵
+                </div>
+                <div className="or-review-item-info">
+                  <div className="or-review-item-name">
+                    Your Delivery Experience
+                  </div>
+                  {deliveryRating && !showDeliveryForm && (
+                    <div className="or-review-item-rated">
+                      <StarDisplay rating={deliveryRating.rating} />
+                      <span className="or-review-item-rated-num">
+                        {deliveryRating.rating}
+                      </span>
+                    </div>
+                  )}
+                  {!deliveryRating && !showDeliveryForm && (
+                    <div className="or-review-item-size">
+                      How was your delivery experience?
+                    </div>
+                  )}
+                </div>
+                {!showDeliveryForm && (
+                  <button
+                    className={`or-btn ${deliveryRating ? "or-btn--ghost" : "or-btn--primary"} or-btn--sm`}
+                    onClick={openDeliveryForm}
+                  >
+                    {deliveryRating ? "Edit" : "Rate"}
+                  </button>
+                )}
+              </div>
+
+              {/* Delivery inline form */}
+              {showDeliveryForm && (
+                <div className="or-review-form">
+                  <StarInput value={drRating} onChange={setDrRating} />
+                  <textarea
+                    className="or-review-textarea"
+                    placeholder="How was the delivery? On time, polite, careful?"
+                    value={drDesc}
+                    onChange={(e) => setDrDesc(e.target.value.slice(0, 500))}
+                  />
+                  <div className="or-review-char">
+                    {500 - drDesc.length} chars left
+                  </div>
+                  <div className="or-review-form-btns">
+                    <button
+                      className="or-btn or-btn--ghost or-btn--sm"
+                      onClick={() => setShowDeliveryForm(false)}
+                      disabled={drSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="or-btn or-btn--primary or-btn--sm"
+                      onClick={submitDeliveryRating}
+                      disabled={drSubmitting || !drRating}
+                    >
+                      {drSubmitting ? (
+                        <>
+                          <span className="or-spin" /> Saving…
+                        </>
+                      ) : deliveryRating ? (
+                        "Update"
+                      ) : (
+                        "Submit Rating"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -291,7 +731,6 @@ const OrderList = ({ onView, showPlaced }) => {
       </nav>
 
       <div className="or-list-wrap">
-        {/* Placed success banner */}
         {showPlaced && (
           <div className="or-placed-banner">
             <div className="or-placed-icon">🎉</div>
@@ -311,7 +750,6 @@ const OrderList = ({ onView, showPlaced }) => {
           </p>
         </div>
 
-        {/* Filter tabs */}
         <div className="or-filters">
           {FILTER_OPTIONS.map((opt) => (
             <button
@@ -324,7 +762,6 @@ const OrderList = ({ onView, showPlaced }) => {
           ))}
         </div>
 
-        {/* Content */}
         {loading ? (
           <div className="or-center">
             <div className="or-spin or-spin--pink" />
@@ -368,8 +805,6 @@ const OrderList = ({ onView, showPlaced }) => {
                       <PaymentBadge status={order.paymentStatus} />
                     </div>
                   </div>
-
-                  {/* Thumbnails */}
                   <div className="or-card-thumbs">
                     {imgItems.map((item, i) => {
                       const src = imgSrc(
@@ -397,7 +832,6 @@ const OrderList = ({ onView, showPlaced }) => {
                       <span className="or-thumb-more">+{extra} more</span>
                     )}
                   </div>
-
                   <div className="or-card-bottom">
                     <span className="or-card-items-label">
                       {itemCount} item{itemCount !== 1 ? "s" : ""}
@@ -410,7 +844,6 @@ const OrderList = ({ onView, showPlaced }) => {
               );
             })}
 
-            {/* Pagination */}
             {pages > 1 && (
               <div className="or-pagination">
                 <button
@@ -452,12 +885,10 @@ const OrderDetail = ({ orderId, onBack, onCancelled }) => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* Cancel flow */
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
 
-  /* Toast */
   const [toast, setToast] = useState(null);
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -488,7 +919,7 @@ const OrderDetail = ({ orderId, onBack, onCancelled }) => {
       });
       showToast("Order cancelled successfully");
       setShowCancel(false);
-      await fetchOrder(); // re-fetch to show updated status
+      await fetchOrder();
       if (onCancelled) onCancelled();
     } catch (err) {
       showToast(
@@ -510,7 +941,6 @@ const OrderDetail = ({ orderId, onBack, onCancelled }) => {
   };
 
   const canCancel = order && ["pending", "confirmed"].includes(order.status);
-
   const itemsSubtotal = order
     ? order.items.reduce((s, i) => s + i.subtotal, 0)
     : 0;
@@ -601,8 +1031,6 @@ const OrderDetail = ({ orderId, onBack, onCancelled }) => {
               </button>
             </div>
             <OrderTracker status={order.status} />
-
-            {/* Cancellation reason if cancelled */}
             {order.status === "cancelled" && order.cancellationReason && (
               <div style={{ padding: "0 20px 20px" }}>
                 <div className="or-cancelled-info">
@@ -740,7 +1168,7 @@ const OrderDetail = ({ orderId, onBack, onCancelled }) => {
             </div>
           </div>
 
-          {/* ── Payment info ── */}
+          {/* ── Payment ── */}
           <div className="or-section">
             <div className="or-section-hd">
               <h2>
@@ -782,6 +1210,11 @@ const OrderDetail = ({ orderId, onBack, onCancelled }) => {
               )}
             </div>
           </div>
+
+          {/* ── Review Section (only when delivered) ── */}
+          {order.status === "delivered" && (
+            <ReviewSection order={order} showToast={showToast} />
+          )}
 
           {/* ── Cancel section ── */}
           {canCancel && (
@@ -845,22 +1278,18 @@ const OrderDetail = ({ orderId, onBack, onCancelled }) => {
 };
 
 /* ══════════════════════════════════════════
-   ROOT: handles both /customer/orders and
-         /customer/orders/:id
+   ROOT
 ══════════════════════════════════════════ */
 const Orders = () => {
-  const { id } = useParams(); // undefined on list page
+  const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const showPlaced = searchParams.get("placed") === "1";
 
-  // Clear ?placed=1 after first render so refresh doesn't re-show banner
   useEffect(() => {
     if (showPlaced) {
-      const t = setTimeout(() => {
-        setSearchParams({}, { replace: true });
-      }, 4000);
+      const t = setTimeout(() => setSearchParams({}, { replace: true }), 4000);
       return () => clearTimeout(t);
     }
   }, [showPlaced, setSearchParams]);

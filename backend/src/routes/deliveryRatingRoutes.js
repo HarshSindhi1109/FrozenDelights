@@ -2,6 +2,7 @@ import express from "express";
 import {
   createDeliveryRating,
   getDeliveryRatings,
+  getMyDeliveryRatingForOrder,
   updateDeliveryRating,
   deleteDeliveryRating,
 } from "../controllers/deliveryRatingController.js";
@@ -13,6 +14,7 @@ const router = express.Router();
 router.get("/:deliveryPersonId", getDeliveryRatings);
 
 // Private
+router.get("/my-order/:orderId", protect, getMyDeliveryRatingForOrder);
 router.post("/", protect, verifyCSRF, createDeliveryRating);
 router.put("/:id", protect, verifyCSRF, updateDeliveryRating);
 router.delete("/:id", protect, verifyCSRF, deleteDeliveryRating);

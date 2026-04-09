@@ -891,3 +891,212 @@
     gap: 5px;
   }
 }
+
+/* ══════════════════════════════════════════
+   REVIEW SECTION (inside OrderDetail)
+══════════════════════════════════════════ */
+
+/* Small button variant */
+.or-btn--sm {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  border-radius: 9px;
+}
+
+/* Stars */
+.or-stars-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.or-star {
+  font-size: 1.8rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 0.12s;
+  user-select: none;
+}
+.or-star:hover {
+  transform: scale(1.15);
+}
+.or-star--full {
+  color: #f59e0b;
+}
+.or-star--half {
+  color: #f59e0b;
+}
+.or-star--empty {
+  color: #e5c9a8;
+}
+
+.or-stars-display {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.or-stars-display .or-star {
+  font-size: 0.9rem;
+  cursor: default;
+  pointer-events: none;
+}
+.or-stars-display .or-star:hover {
+  transform: none;
+}
+
+.or-rating-hint {
+  font-size: 0.78rem;
+  color: var(--or-text3);
+  font-weight: 500;
+  min-height: 18px;
+  margin-bottom: 12px;
+}
+
+/* Block title inside review section */
+.or-review-block-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--or-text3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 14px;
+}
+
+.or-review-divider {
+  height: 1px;
+  background: var(--or-border);
+  margin: 20px 0;
+}
+
+/* Individual ice cream review row */
+.or-review-item {
+  border: 1.5px solid var(--or-border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: var(--or-cream);
+  transition: border-color 0.15s;
+}
+.or-review-item:last-child {
+  margin-bottom: 0;
+}
+.or-review-item:hover {
+  border-color: rgba(236, 72, 153, 0.25);
+}
+
+.or-review-item-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.or-review-item-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  border: 1.5px solid var(--or-border);
+  background: var(--or-cream2);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+.or-review-item-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.or-review-item-info {
+  flex: 1;
+  min-width: 0;
+}
+.or-review-item-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--or-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.or-review-item-size {
+  font-size: 0.75rem;
+  color: var(--or-text3);
+  margin-top: 2px;
+}
+.or-review-item-rated {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+.or-review-item-rated-num {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+/* Inline review form */
+.or-review-form {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--or-border);
+}
+
+.or-review-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--or-border);
+  background: #fff;
+  font-family: var(--ff-body);
+  font-size: 0.85rem;
+  color: var(--or-text);
+  resize: vertical;
+  min-height: 72px;
+  outline: none;
+  transition: border-color 0.15s;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.or-review-textarea:focus {
+  border-color: var(--or-pink);
+}
+
+.or-review-char {
+  font-size: 0.72rem;
+  color: var(--or-text3);
+  text-align: right;
+  margin-bottom: 12px;
+}
+
+.or-review-form-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Loading state inside review section */
+.or-review-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  font-size: 0.875rem;
+  color: var(--or-text3);
+}
+
+@media (max-width: 480px) {
+  .or-review-item-top {
+    flex-wrap: wrap;
+  }
+  .or-review-form-btns {
+    justify-content: stretch;
+  }
+  .or-review-form-btns .or-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
