@@ -340,7 +340,7 @@ const Checkout = () => {
         <div className="ck-nav-inner">
           <button
             className="ck-nav-back"
-            onClick={() => (step > 1 ? goBack() : navigate("/cart"))}
+            onClick={() => (step > 1 ? goBack() : navigate("/customer/cart"))}
           >
             <svg
               width="17"

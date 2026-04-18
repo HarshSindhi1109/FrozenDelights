@@ -185,6 +185,31 @@ body {
 }
 
 /* ───────────────────────────────────────────
+   LOGOUT BUTTON
+─────────────────────────────────────────── */
+.dd-logout-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dd-logout-btn:hover {
+  background: var(--red-dim);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--red);
+}
+
+/* ───────────────────────────────────────────
    MAIN CONTENT
 ─────────────────────────────────────────── */
 .dd-main {
@@ -1706,4 +1731,29 @@ body {
   padding: 1px 7px;
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+/* ───────────────────────────────────────────
+   LOGOUT BUTTON
+─────────────────────────────────────────── */
+.dd-logout-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dd-logout-btn:hover {
+  background: var(--red-dim);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: var(--red);
 }
