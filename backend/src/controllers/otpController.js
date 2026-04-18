@@ -64,17 +64,19 @@ export const verifyEmailOtp = catchAsync(async (req, res, next) => {
   const token = generateToken(user);
   const csrfToken = generateCsrfToken(token);
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 
   res.cookie("csrfToken", csrfToken, {
     httpOnly: false,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 

@@ -6,10 +6,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
-import https from "https";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import http from "http";
 import mongoSanitize from "express-mongo-sanitize";
 import hpp from "hpp";
 
@@ -103,32 +100,16 @@ app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5050;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const startServer = async () => {
   try {
     await connectDB();
 
     startDailyPayoutJob();
 
-    const keyPath = path.join(__dirname, "../localhost-key.pem");
-    const certPath = path.join(__dirname, "../localhost.pem");
+    const httpServer = http.createServer(app);
 
-    if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-      console.error("SSL files not found");
-      process.exit(1);
-    }
-
-    const options = {
-      key: fs.readFileSync(keyPath),
-      cert: fs.readFileSync(certPath),
-    };
-
-    const httpsServer = https.createServer(options, app);
-
-    httpsServer.listen(PORT, () => {
-      console.log(`HTTPS server running at https://localhost:${PORT}`);
+    httpServer.listen(PORT, () => {
+      console.log(`HTTP server running at http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error("Database connection failed:", error.message);

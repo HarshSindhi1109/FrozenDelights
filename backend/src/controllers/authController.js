@@ -18,6 +18,8 @@ const deleteFileIfExists = async (filePath) => {
   }
 };
 
+const isProduction = process.env.NODE_ENV === "production";
+
 export const registerUser = catchAsync(async (req, res, next) => {
   const { username, email, password } = req.body;
 
@@ -137,16 +139,16 @@ export const loginUser = catchAsync(async (req, res, next) => {
   // Set jwt in HTTPOnly cookie
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 
   // Set CSRF in normal cookie
   res.cookie("csrfToken", csrfToken, {
     httpOnly: false,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 
@@ -176,14 +178,14 @@ export const logoutUser = catchAsync(async (req, res, next) => {
   // Clear cookies (must match cookie settings)
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
   });
 
   res.clearCookie("csrfToken", {
     httpOnly: false,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
   });
 
   res.status(200).json({
@@ -246,16 +248,16 @@ export const googleAuth = catchAsync(async (req, res, next) => {
   // Set jwt in HTTPOnly cookie
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 
   // Set CSRF in normal cookie
   res.cookie("csrfToken", csrfToken, {
     httpOnly: false,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 
@@ -330,15 +332,15 @@ export const googleAuthToken = catchAsync(async (req, res, next) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 
   res.cookie("csrfToken", csrfToken, {
     httpOnly: false,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
     maxAge: 2 * 24 * 60 * 60 * 1000,
   });
 
@@ -417,11 +419,15 @@ export const updateAvatar = catchAsync(async (req, res, next) => {
 
 export const deleteMe = catchAsync(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user.id, { isDeleted: true });
-  res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "None" });
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
+  });
   res.clearCookie("csrfToken", {
     httpOnly: false,
-    secure: true,
-    sameSite: "None",
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
   });
   res.status(200).json({ success: true, message: "Account deleted." });
 });
