@@ -4,6 +4,7 @@ import {
   updatePayoutStatus,
   getMyPayouts,
   getAllPayouts,
+  processPayout,
 } from "../controllers/dailyPayoutController.js";
 import {
   protect,
@@ -19,6 +20,13 @@ router.get("/my", protect, authorize("delivery_man"), getMyPayouts);
 // Admin Routes
 router.get("/", protect, authorize("admin"), getAllPayouts);
 router.post("/", protect, authorize("admin"), verifyCSRF, createDailyPayout);
+router.post(
+  "/:payoutId/process",
+  protect,
+  authorize("admin"),
+  verifyCSRF,
+  processPayout,
+);
 router.patch(
   "/:payoutId",
   protect,

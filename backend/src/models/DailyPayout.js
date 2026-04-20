@@ -52,7 +52,7 @@ const DailyPayoutSchema = new mongoose.Schema(
 
     paymentProvider: {
       type: String,
-      enum: ["razorpay", "stripe"],
+      enum: ["razorpay", "stripe", "manual"],
     },
 
     transactionReference: {

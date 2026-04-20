@@ -2,11 +2,13 @@ import { Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../services/api";
 
-const PublicRoute = ({ children, redirectTo = "/customer/home" }) => {
-  const [loading, setLoading] = useState(true);
+const PublicRoute = ({ children, redirectTo = "/customer/home", requiresAuthCheck = true }) => {
+  const [loading, setLoading] = useState(requiresAuthCheck);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    if (!requiresAuthCheck) return;
+
     const checkAuth = async () => {
       try {
         await api.get("/auth/me");
@@ -19,7 +21,7 @@ const PublicRoute = ({ children, redirectTo = "/customer/home" }) => {
     };
 
     checkAuth();
-  }, []);
+  }, [requiresAuthCheck]);
 
   if (loading) {
     return (

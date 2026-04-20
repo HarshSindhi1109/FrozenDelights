@@ -4,7 +4,7 @@ import api from "../../services/api";
 import "./LandingPage.css";
 
 /* ─── helpers ─────────────────────────────────── */
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_IMG_URL;
 
 const imgSrc = (url) => (url ? `${BASE_URL}/${url.replace(/\\/g, "/")}` : null);
 
@@ -54,23 +54,6 @@ const WHY_US = [
   },
 ];
 
-/* ─── Scroll Reveal Hook ──────────────────────── */
-const useScrollReveal = () => {
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) =>
-        entries.forEach((e) =>
-          e.target.classList.toggle("visible", e.isIntersecting),
-        ),
-      { threshold: 0.12 },
-    );
-    document
-      .querySelectorAll(".fd-reveal")
-      .forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
-};
-
 /* ─── Sprinkles config ────────────────────────── */
 const SPRINKLES = [
   { w: 6, h: 22, bg: "#f06292", top: "18%", left: "4%", dur: "7s", rot: 0 },
@@ -110,7 +93,20 @@ const LandingPage = () => {
   const [contactError, setContactError] = useState("");
   const [contactSuccess, setContactSuccess] = useState("");
 
-  useScrollReveal();
+  useEffect(() => {
+    if (catLoading || icLoading || revLoading) return; // wait for data
+    const observer = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) =>
+          e.target.classList.toggle("visible", e.isIntersecting),
+        ),
+      { threshold: 0.12 },
+    );
+    document
+      .querySelectorAll(".fd-reveal")
+      .forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [catLoading, icLoading, revLoading]);
 
   /* ── Fetch categories ── */
   useEffect(() => {

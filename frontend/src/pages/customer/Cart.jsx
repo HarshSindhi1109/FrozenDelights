@@ -18,8 +18,12 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
 
   /* ── Per-item updating/removing state ── */
-  const [updatingId, setUpdatingId] = useState(null); // "itemId-size"
+  const [updatingId, setUpdatingId] = useState(null); // "iceCreamId-size"
   const [removingId, setRemovingId] = useState(null);
+
+  /* ── Variant switching state ── */
+  // key: "iceCreamId-currentSize", value: true while switching
+  const [switchingVariant, setSwitchingVariant] = useState(null);
 
   /* ── Clear cart ── */
   const [showClearModal, setShowClearModal] = useState(false);
@@ -57,9 +61,6 @@ const Cart = () => {
   /* ── Update quantity ── */
   const handleQuantityChange = async (item, newQty) => {
     if (newQty < 1) return;
-    // item.iceCreamId is a populated object on first render, but the PATCH
-    // response returns a non-populated cart (plain ObjectId). To avoid losing
-    // the image/name on subsequent clicks we always re-fetch after mutating.
     const iceCreamId =
       typeof item.iceCreamId === "object"
         ? item.iceCreamId._id
@@ -72,13 +73,60 @@ const Cart = () => {
         size: item.size,
         quantity: newQty,
       });
-      // Re-fetch so items are always fully populated (name + imageUrl intact)
       const r = await api.get("/cart");
       setCart(r.data.cart);
     } catch (err) {
       showToast(err.response?.data?.message || "Failed to update", "error");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  /* ── Switch variant ── */
+  // Backend cart is keyed by (iceCreamId + size), so switching variant =
+  // DELETE old size + POST new size (carrying over the same quantity).
+  const handleVariantSwitch = async (item, newSize) => {
+    if (newSize === item.size) return;
+
+    const iceCreamId =
+      typeof item.iceCreamId === "object"
+        ? item.iceCreamId._id
+        : item.iceCreamId;
+
+    // Find new variant's price from populated variants
+    const newVariant = item.iceCreamId.variants?.find(
+      (v) => v.size.toLowerCase() === newSize.toLowerCase(),
+    );
+    if (!newVariant || !newVariant.isAvailable) {
+      showToast("That size is not available", "error");
+      return;
+    }
+
+    const key = `${iceCreamId}-${item.size}`;
+    setSwitchingVariant(key);
+    try {
+      // 1. Remove old size
+      await api.delete("/cart/item", {
+        data: { iceCreamId, size: item.size },
+      });
+      // 2. Add new size (carry over quantity, capped by new stock)
+      const qty = Math.min(item.quantity, newVariant.stock || item.quantity);
+      await api.post("/cart", {
+        iceCreamId,
+        size: newSize,
+        quantity: qty,
+      });
+      // 3. Re-fetch to get fully populated cart
+      const r = await api.get("/cart");
+      setCart(r.data.cart);
+      showToast(`Switched to ${newSize}`);
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Failed to switch size",
+        "error",
+      );
+    } finally {
+      setSwitchingVariant(null);
     }
   };
 
@@ -94,7 +142,6 @@ const Cart = () => {
       await api.delete("/cart/item", {
         data: { iceCreamId, size: item.size },
       });
-      // Re-fetch to keep cart fully populated
       const r = await api.get("/cart");
       setCart(r.data.cart);
       showToast("Item removed");
@@ -273,10 +320,17 @@ const Cart = () => {
                   const key = `${iceCreamIdStr}-${item.size}`;
                   const isUpdating = updatingId === key;
                   const isRemoving = removingId === key;
+                  const isSwitching = switchingVariant === key;
+                  const isBusy = isUpdating || isRemoving || isSwitching;
                   const src = imgSrc(item.iceCreamId.imageUrl);
-                  // Find stock for this item's size from populated variants
+
+                  // All variants for this ice cream (from populated data)
+                  const allVariants = item.iceCreamId.variants || [];
+                  const hasMultipleVariants = allVariants.length > 1;
+
+                  // Stock for current size (for + button cap)
                   const stockForItem =
-                    item.iceCreamId.variants?.find(
+                    allVariants.find(
                       (v) => v.size.toLowerCase() === item.size.toLowerCase(),
                     )?.stock ?? Infinity;
 
@@ -317,10 +371,57 @@ const Cart = () => {
                         >
                           {item.iceCreamId.name}
                         </Link>
+
+                        {/* ── Variant selector ── */}
                         <div className="ct-item-meta">
-                          <span className="ct-item-size-badge">
-                            {item.size}
-                          </span>
+                          {hasMultipleVariants ? (
+                            <div className="ct-variant-selector">
+                              <span className="ct-variant-label">Size:</span>
+                              <div className="ct-variant-pills">
+                                {allVariants.map((v) => {
+                                  const isActive =
+                                    v.size.toLowerCase() ===
+                                    item.size.toLowerCase();
+                                  const isUnavailable =
+                                    !v.isAvailable || v.stock === 0;
+                                  return (
+                                    <button
+                                      key={v._id}
+                                      className={`ct-variant-pill${isActive ? " ct-variant-pill--active" : ""}${isUnavailable ? " ct-variant-pill--disabled" : ""}`}
+                                      onClick={() =>
+                                        !isUnavailable &&
+                                        handleVariantSwitch(item, v.size)
+                                      }
+                                      disabled={isBusy || isUnavailable}
+                                      title={
+                                        isUnavailable
+                                          ? "Out of stock"
+                                          : `₹${v.basePrice}`
+                                      }
+                                    >
+                                      {isSwitching && isActive ? (
+                                        <span className="ct-spin ct-spin--dark" />
+                                      ) : (
+                                        <>
+                                          {v.size}
+                                          {!isActive && !isUnavailable && (
+                                            <span className="ct-variant-pill-price">
+                                              ₹{v.basePrice}
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : (
+                            // Single variant — show static badge as before
+                            <span className="ct-item-size-badge">
+                              {item.size}
+                            </span>
+                          )}
                           <span className="ct-item-unit-price">
                             ₹{item.price} each
                           </span>
@@ -336,7 +437,7 @@ const Cart = () => {
                               onClick={() =>
                                 handleQuantityChange(item, item.quantity - 1)
                               }
-                              disabled={isUpdating || item.quantity <= 1}
+                              disabled={isBusy || item.quantity <= 1}
                             >
                               −
                             </button>
@@ -352,9 +453,7 @@ const Cart = () => {
                               onClick={() =>
                                 handleQuantityChange(item, item.quantity + 1)
                               }
-                              disabled={
-                                isUpdating || item.quantity >= stockForItem
-                              }
+                              disabled={isBusy || item.quantity >= stockForItem}
                               title={
                                 item.quantity >= stockForItem
                                   ? `Max stock: ${stockForItem}`
@@ -377,7 +476,7 @@ const Cart = () => {
                           <button
                             className="ct-remove-btn"
                             onClick={() => handleRemove(item)}
-                            disabled={isRemoving || isUpdating}
+                            disabled={isBusy}
                             title="Remove item"
                           >
                             {isRemoving ? (

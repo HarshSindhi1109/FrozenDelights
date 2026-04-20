@@ -55,6 +55,10 @@ const PayoutDetail = ({ payout, onClose, onUpdated }) => {
     try {
       await api.patch(`/daily-payouts/${payout._id}`, {
         payoutStatus: newStatus,
+        // Model requires paymentProvider when status is "paid"
+        ...(newStatus === "paid" && !payout.paymentProvider
+          ? { paymentProvider: "manual" }
+          : {}),
       });
       showToast(`Status updated to "${newStatus}"`);
       setTimeout(() => {

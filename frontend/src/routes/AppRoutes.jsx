@@ -35,7 +35,7 @@ function AppRoutes() {
         <Route
           path="/"
           element={
-            <PublicRoute>
+            <PublicRoute requiresAuthCheck={false}>
               <LandingPage />
             </PublicRoute>
           }

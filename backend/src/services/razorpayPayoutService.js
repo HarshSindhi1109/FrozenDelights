@@ -1,4 +1,13 @@
-import razorpay from "../config/razorpay.js";
+import axios from "axios";
+import { v4 as uuidv4 } from "uuid"; 
+
+export const rzpX = axios.create({
+  baseURL: "https://api.razorpay.com/v1",
+  auth: {
+    username: process.env.RAZORPAY_KEY_ID,
+    password: process.env.RAZORPAY_SECRET,
+  },
+});
 
 export const createFundAccountIdIfNotExists = async (deliveryPerson) => {
   if (deliveryPerson.razorpayFundAccountId) {
@@ -11,23 +20,20 @@ export const createFundAccountIdIfNotExists = async (deliveryPerson) => {
     throw new Error("Delivery person email not loaded");
   }
 
-  //  Create contact (only if not exists)
   let contactId = deliveryPerson.razorpayContactId;
 
   if (!contactId) {
-    const contact = await razorpay.contacts.create({
+    const { data: contact } = await rzpX.post("/contacts", {
       name: deliveryPerson.fullname,
       email: deliveryPerson.userId.email,
       contact: deliveryPerson.phone,
       type: "vendor",
     });
-
     contactId = contact.id;
     deliveryPerson.razorpayContactId = contactId;
   }
 
-  //  Create fund account
-  const fundAccount = await razorpay.fund_accounts.create({
+  const { data: fundAccount } = await rzpX.post("/fund_accounts", {
     contact_id: contactId,
     account_type: "bank_account",
     bank_account: {

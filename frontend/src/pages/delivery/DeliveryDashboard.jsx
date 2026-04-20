@@ -12,6 +12,9 @@ const DeliveryDashboard = () => {
   const [availability, setAvailability] = useState("offline");
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState("");
+  const [activeOrderId, setActiveOrderId] = useState(
+    () => localStorage.getItem("activeOrderId") || null,
+  );
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -43,6 +46,10 @@ const DeliveryDashboard = () => {
       const p = profileRes.data.data;
       setProfile(p);
       setAvailability(p.availability);
+      if (p.availability !== "busy") {
+        localStorage.removeItem("activeOrderId");
+        setActiveOrderId(null);
+      }
 
       const allEarnings = earningsRes.data.data || [];
       const today = new Date().toDateString();
@@ -68,6 +75,10 @@ const DeliveryDashboard = () => {
         availability: newStatus,
       });
       setAvailability(newStatus);
+      if (newStatus !== "busy") {
+        localStorage.removeItem("activeOrderId");
+        setActiveOrderId(null);
+      }
       showToast(
         newStatus === "online"
           ? "You're now online 🟢"
@@ -91,6 +102,8 @@ const DeliveryDashboard = () => {
     try {
       await api.post(`/orders/${orderId}/accept-delivery`);
       setIncomingOrders((prev) => prev.filter((o) => o._id !== orderId));
+      setActiveOrderId(orderId);
+      localStorage.setItem("activeOrderId", orderId);
       showToast("Order accepted! 🎉");
       navigate(`/delivery/order/${orderId}`);
     } catch (err) {
@@ -292,7 +305,10 @@ const DeliveryDashboard = () => {
           <div className="dd-active-banner">
             <span className="dd-active-pulse" />
             <span>You have an active delivery in progress</span>
-            <Link to="/delivery/active-order" className="dd-active-link">
+            <Link
+              to={`/delivery/order/${activeOrderId}`}
+              className="dd-active-link"
+            >
               View Order →
             </Link>
           </div>
@@ -328,11 +344,17 @@ const DeliveryDashboard = () => {
           ) : (
             <div className="dd-orders-list">
               {incomingOrders.map((order) => {
-                const estEarning =
-                  (order.deliveryFeeBreakdown?.basePay || 0) +
-                  (order.deliveryFeeBreakdown?.distancePay || 0) +
-                  (order.deliveryFeeBreakdown?.surgeBonus || 0) +
-                  (order.tip || 0);
+                const breakdown = order.deliveryFeeBreakdown || {};
+                const rawDriverPay =
+                  (breakdown.basePay || 0) +
+                  (breakdown.distancePay || 0) +
+                  (breakdown.surgeBonus || 0);
+
+                const driverPay = breakdown.deliveryFee
+                  ? breakdown.deliveryFee
+                  : Math.min(rawDriverPay, 200);
+
+                const estEarning = driverPay + (order.tip || 0);
 
                 return (
                   <div key={order._id} className="dd-order-card">

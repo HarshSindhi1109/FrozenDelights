@@ -56,6 +56,7 @@ const ActiveOrder = () => {
     setActionLoading(true);
     try {
       await api.patch(`/orders/${id}/deliver`);
+      localStorage.removeItem("activeOrderId");
       showToast("Delivery completed! Great job 🎉");
       setTimeout(() => navigate("/delivery/dashboard"), 1500);
     } catch (err) {
@@ -287,13 +288,59 @@ const ActiveOrder = () => {
           <div className="dd-card earnings-card">
             <div className="dd-card-title">💰 Your Earnings</div>
             <div className="dd-earning-breakdown">
-              <div className="dd-earning-row">
-                <span>Base Pay</span>
-                <span>₹{order.deliveryFeeBreakdown?.basePay || 0}</span>
-              </div>
-              <div className="dd-earning-row">
-                <span>Distance Pay ({order.distanceKm?.toFixed(1)} km)</span>
-                <span>₹{order.deliveryFeeBreakdown?.distancePay || 0}</span>
+              <div className="dd-card earnings-card">
+                <div className="dd-card-title">💰 Your Earnings</div>
+                <div className="dd-earning-breakdown">
+                  {(() => {
+                    const bd = order.deliveryFeeBreakdown || {};
+                    const rawDriverPay =
+                      (bd.basePay || 0) +
+                      (bd.distancePay || 0) +
+                      (bd.surgeBonus || 0);
+                    const driverPay = bd.deliveryFee
+                      ? bd.deliveryFee
+                      : Math.min(rawDriverPay, 200);
+                    const scale =
+                      rawDriverPay > 0 ? driverPay / rawDriverPay : 1;
+
+                    return (
+                      <>
+                        <div className="dd-earning-row">
+                          <span>Base Pay</span>
+                          <span>₹{((bd.basePay || 0) * scale).toFixed(0)}</span>
+                        </div>
+                        <div className="dd-earning-row">
+                          <span>
+                            Distance Pay ({order.distanceKm?.toFixed(1)} km)
+                          </span>
+                          <span>
+                            ₹{((bd.distancePay || 0) * scale).toFixed(0)}
+                          </span>
+                        </div>
+                        {bd.surgeEnabled && (
+                          <div className="dd-earning-row surge">
+                            <span>⚡ Surge Bonus ({bd.surgeMultiplier}x)</span>
+                            <span>
+                              ₹{((bd.surgeBonus || 0) * scale).toFixed(0)}
+                            </span>
+                          </div>
+                        )}
+                        {order.tip > 0 && (
+                          <div className="dd-earning-row tip">
+                            <span>Customer Tip 🙏</span>
+                            <span>₹{order.tip}</span>
+                          </div>
+                        )}
+                        <div className="dd-earning-total">
+                          <span>Total Earned</span>
+                          <span>
+                            ₹{(driverPay + (order.tip || 0)).toFixed(0)}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
               {order.deliveryFeeBreakdown?.surgeEnabled && (
                 <div className="dd-earning-row surge">
@@ -314,12 +361,17 @@ const ActiveOrder = () => {
                 <span>Total Earned</span>
                 <span>
                   ₹
-                  {(
-                    (order.deliveryFeeBreakdown?.basePay || 0) +
-                    (order.deliveryFeeBreakdown?.distancePay || 0) +
-                    (order.deliveryFeeBreakdown?.surgeBonus || 0) +
-                    (order.tip || 0)
-                  ).toFixed(0)}
+                  {(() => {
+                    const bd = order.deliveryFeeBreakdown || {};
+                    const rawDriverPay =
+                      (bd.basePay || 0) +
+                      (bd.distancePay || 0) +
+                      (bd.surgeBonus || 0);
+                    const driverPay = bd.deliveryFee
+                      ? bd.deliveryFee
+                      : Math.min(rawDriverPay, 200);
+                    return (driverPay + (order.tip || 0)).toFixed(0);
+                  })()}
                 </span>
               </div>
             </div>

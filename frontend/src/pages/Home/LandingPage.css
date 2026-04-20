@@ -876,11 +876,8 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
-  transition: var(--transition);
   line-height: 1;
-}
-.fd-product-add-btn:hover {
-  transform: scale(1.18) rotate(90deg);
+  text-decoration: none;
 }
 
 /* ════════════════════════════════════════

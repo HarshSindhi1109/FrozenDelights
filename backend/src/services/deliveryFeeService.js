@@ -74,11 +74,13 @@ export const calculateDeliveryFee = async ({ customerLat, customerLng }) => {
     Math.max(config.minDeliveryFee, Math.min(config.maxDeliveryFee, rawFee)),
   );
 
+  const scale = rawFee > 0 ? deliveryFee / rawFee : 1;
+
   return {
     distanceKm: parseFloat(distanceKm.toFixed(3)),
-    basePay,
-    distancePay,
-    surgeBonus,
+    basePay: parseFloat((basePay * scale).toFixed(2)),
+    distancePay: parseFloat((distancePay * scale).toFixed(2)),
+    surgeBonus: parseFloat((surgeBonus * scale).toFixed(2)),
     deliveryFee,
     surgeEnabled: config.surgeEnabled,
     surgeMultiplier,
