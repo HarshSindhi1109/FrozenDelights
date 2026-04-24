@@ -4,7 +4,7 @@ import { processDailyPayout } from "../services/dailyPayoutService.js";
 import { processRazorpayPayout } from "../services/autoPayoutService.js";
 
 export const startDailyPayoutJob = () => {
-  cron.schedule("01 18 * * *", async () => {
+  cron.schedule("59 23 * * *", async () => {
     console.log("Running daily payout job...");
 
     try {

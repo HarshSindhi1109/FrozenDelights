@@ -87,7 +87,9 @@ export const getIceCreams = catchAsync(async (req, res, next) => {
     filter.flavourId = flavourId;
   }
 
-  filter.isActive = isActive !== undefined ? isActive === "true" : true;
+  if (isActive !== undefined) {
+    filter.isActive = isActive === "true";
+  }
 
   if (search) {
     const safeSearch = search.trim().slice(0, 50);

@@ -27,6 +27,7 @@ import EarningsPage from "../pages/delivery/EarningsPage";
 import PayoutsPage from "../pages/delivery/PayoutsPage";
 import ProfilePage from "../pages/delivery/ProfilePage";
 import Reviews from "../pages/customer/Reviews";
+import DeliveryApply from "../pages/customer/DeliveryApply";
 
 function AppRoutes() {
   return (
@@ -108,6 +109,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Reviews />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/customer/become-delivery-partner"
+          element={
+            <ProtectedRoute>
+              <DeliveryApply />
             </ProtectedRoute>
           }
         />

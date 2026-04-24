@@ -16,7 +16,7 @@ const fmtDate = (iso) =>
 const toInputDate = (iso) =>
   iso ? new Date(iso).toISOString().split("T")[0] : "";
 
-/* ── Modal ── */
+/* ── Create / Edit Modal ── */
 const FlavourModal = ({ flavour, categories, onClose, onSaved }) => {
   const isEdit = !!flavour;
   const [form, setForm] = useState({
@@ -104,6 +104,7 @@ const FlavourModal = ({ flavour, categories, onClose, onSaved }) => {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
+
           <div className="ap-field">
             <label className="ap-label">Category</label>
             <select
@@ -121,6 +122,7 @@ const FlavourModal = ({ flavour, categories, onClose, onSaved }) => {
               ))}
             </select>
           </div>
+
           <div className="ap-field">
             <label className="ap-label">
               Flavour Image {isEdit ? "(leave empty to keep existing)" : ""}
@@ -253,9 +255,11 @@ const FlavourModal = ({ flavour, categories, onClose, onSaved }) => {
   );
 };
 
+/* ── Delete Confirm ── */
 const DeleteConfirm = ({ flavour, onClose, onDeleted }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const handleDelete = async () => {
     setLoading(true);
     try {
@@ -266,6 +270,7 @@ const DeleteConfirm = ({ flavour, onClose, onDeleted }) => {
       setLoading(false);
     }
   };
+
   return (
     <div className="ap-modal-overlay" onClick={onClose}>
       <div
@@ -321,6 +326,7 @@ const AdminFlavours = () => {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -339,31 +345,20 @@ const AdminFlavours = () => {
   const fetchFlavours = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page,
-        limit: 12,
-        isActive: "false",
-      });
+      const params = new URLSearchParams({ page, limit: 12 });
       if (search.trim()) params.set("search", search.trim());
       if (catFilter) params.set("categoryId", catFilter);
-      // pass no isActive to get all (backend defaults to true, we override by not filtering)
-      // eslint-disable-next-line no-unused-vars
-      const res = await api.get(
-        `/flavours?page=${page}&limit=12${catFilter ? `&categoryId=${catFilter}` : ""}${search.trim() ? `&search=${search.trim()}` : ""}&isActive=`,
-      );
-      // Actually fetch both active and inactive: use showInactive pattern
-      const res2 = await api.get(
-        `/flavours?page=${page}&limit=12${catFilter ? `&categoryId=${catFilter}` : ""}${search.trim() ? `&search=${search.trim()}` : ""}`,
-      );
-      setFlavours(res2.data.data || []);
-      setPages(res2.data.pages || 1);
-      setTotal(res2.data.total || 0);
+      if (!showInactive) params.set("isActive", "true");
+      const res = await api.get(`/flavours?${params}`);
+      setFlavours(res.data.data || []);
+      setPages(res.data.pages || 1);
+      setTotal(res.data.total || 0);
     } catch {
       showToast("Failed to load flavours", "error");
     } finally {
       setLoading(false);
     }
-  }, [page, search, catFilter]);
+  }, [page, search, catFilter, showInactive]);
 
   useEffect(() => {
     fetchFlavours();
@@ -408,22 +403,44 @@ const AdminFlavours = () => {
           <h1>Flavours</h1>
           <p>{total} flavours</p>
         </div>
-        <button
-          className="ap-btn ap-btn--primary"
-          onClick={() => setModal("create")}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <label
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              fontSize: "0.82rem",
+              color: "var(--a-text2)",
+              cursor: "pointer",
+            }}
           >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          New Flavour
-        </button>
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => {
+                setShowInactive(e.target.checked);
+                setPage(1);
+              }}
+            />
+            Show inactive
+          </label>
+          <button
+            className="ap-btn ap-btn--primary"
+            onClick={() => setModal("create")}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New Flavour
+          </button>
+        </div>
       </div>
 
       <div className="ap-card">

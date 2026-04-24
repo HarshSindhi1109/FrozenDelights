@@ -579,6 +579,7 @@ const EditModal = ({ iceCream, flavours, onClose, onSaved }) => {
   );
 };
 
+/* ── Delete Confirm ── */
 const DeleteConfirm = ({ item, onClose, onDeleted }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -646,6 +647,7 @@ const AdminIceCreams = () => {
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -654,22 +656,22 @@ const AdminIceCreams = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // ── Fetch flavours once on mount ──
   useEffect(() => {
     api
       .get("/flavours?limit=100")
       .then((r) => setFlavours(r.data.data || []))
-      .catch(() => {});
+      .catch(() => showToast("Failed to load flavours", "error"));
   }, []);
 
+  // ── Fetch ice creams ──
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page, limit: 12 });
       if (search.trim()) params.set("search", search.trim());
-      // Show all including inactive
-      const res = await api.get(
-        `/ice-creams?page=${page}&limit=12${search.trim() ? `&search=${search.trim()}` : ""}&isActive=true`,
-      );
+      if (!showInactive) params.set("isActive", "true");
+      const res = await api.get(`/ice-creams?${params}`);
       setItems(res.data.data || []);
       setPages(res.data.pages || 1);
       setTotal(res.data.total || 0);
@@ -678,7 +680,7 @@ const AdminIceCreams = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, search, showInactive]);
 
   useEffect(() => {
     fetchItems();
@@ -723,22 +725,44 @@ const AdminIceCreams = () => {
           <h1>Ice Creams</h1>
           <p>{total} products</p>
         </div>
-        <button
-          className="ap-btn ap-btn--primary"
-          onClick={() => setModal("create")}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <label
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              fontSize: "0.82rem",
+              color: "var(--a-text2)",
+              cursor: "pointer",
+            }}
           >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          New Ice Cream
-        </button>
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => {
+                setShowInactive(e.target.checked);
+                setPage(1);
+              }}
+            />
+            Show inactive
+          </label>
+          <button
+            className="ap-btn ap-btn--primary"
+            onClick={() => setModal("create")}
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            New Ice Cream
+          </button>
+        </div>
       </div>
 
       <div className="ap-card">

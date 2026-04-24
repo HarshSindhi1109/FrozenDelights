@@ -72,6 +72,7 @@ const PayoutDetail = ({ payout, onClose, onUpdated }) => {
     }
   };
 
+  const [showAccount, setShowAccount] = useState(false);
   const dp = payout.deliveryPersonId;
 
   return (
@@ -190,6 +191,117 @@ const PayoutDetail = ({ payout, onClose, onUpdated }) => {
           {payout.failureReason && (
             <div className="ap-error-box" style={{ marginBottom: 14 }}>
               Failure: {payout.failureReason}
+            </div>
+          )}
+
+          {/* Bank details — only visible for failed payouts to help diagnose the failure */}
+          {payout.payoutStatus === "failed" && dp?.bankDetails && (
+            <div
+              style={{
+                background: "rgba(239,68,68,0.04)",
+                border: "1px solid rgba(239,68,68,0.15)",
+                borderRadius: 10,
+                padding: "14px 16px",
+                marginBottom: 18,
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "var(--ff-mono)",
+                  fontSize: "0.6rem",
+                  color: "var(--a-text3)",
+                  letterSpacing: 1,
+                  marginBottom: 10,
+                }}
+              >
+                // BANK DETAILS
+              </div>
+              {[
+                ["Bank", dp.bankDetails.bankName || "—"],
+                ["UPI", dp.bankDetails.upiId || "—"],
+              ].map(([k, v]) => (
+                <div
+                  key={k}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "0.83rem",
+                    color: "var(--a-text2)",
+                    marginBottom: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "var(--ff-mono)",
+                      fontSize: "0.72rem",
+                      color: "var(--a-text3)",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {k}
+                  </span>
+                  <span>{v}</span>
+                </div>
+              ))}
+              {dp.bankDetails.accountNumber && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "0.83rem",
+                    color: "var(--a-text2)",
+                    marginBottom: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "var(--ff-mono)",
+                      fontSize: "0.72rem",
+                      color: "var(--a-text3)",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Account
+                  </span>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "var(--ff-mono)",
+                        fontSize: "0.8rem",
+                        letterSpacing: 1,
+                      }}
+                    >
+                      {showAccount
+                        ? dp.bankDetails.accountNumber
+                        : "•".repeat(
+                            Math.max(
+                              0,
+                              dp.bankDetails.accountNumber.length - 4,
+                            ),
+                          ) + dp.bankDetails.accountNumber.slice(-4)}
+                    </span>
+                    <button
+                      onClick={() => setShowAccount((v) => !v)}
+                      style={{
+                        background: "none",
+                        border: "1px solid var(--a-border)",
+                        borderRadius: 6,
+                        cursor: "pointer",
+                        padding: "2px 7px",
+                        fontSize: "0.7rem",
+                        color: "var(--a-text3)",
+                        lineHeight: 1.6,
+                      }}
+                      title={showAccount ? "Hide" : "Reveal account number"}
+                    >
+                      {showAccount ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -38,7 +38,7 @@ router.post(
 );
 
 // delivery person routes
-router.get("/me", protect, authorize("delivery_man"), getMyDeliveryProfile);
+router.get("/me", protect, authorize("delivery_man", "customer"), getMyDeliveryProfile);
 
 router.patch(
   "/availability",

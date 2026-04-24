@@ -97,8 +97,6 @@ export const getFlavours = catchAsync(async (req, res, next) => {
 
   if (isActive !== undefined) {
     filter.isActive = isActive === "true";
-  } else {
-    filter.isActive = true;
   }
 
   if (search) {

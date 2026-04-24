@@ -71,18 +71,24 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
+  const [flavours, setFlavours] = useState([]);
   const [iceCreams, setIceCreams] = useState([]);
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedFlavour, setSelectedFlavour] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState("-averageRating");
   const [cartCount, setCartCount] = useState(0);
 
   const [catLoading, setCatLoading] = useState(true);
+  const [flavourLoading, setFlavourLoading] = useState(false);
   const [icLoading, setIcLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  const flavoursRef = useRef(null);
+  const iceCreamsRef = useRef(null);
 
   const [addingId, setAddingId] = useState(null);
   const [addedId, setAddedId] = useState(null);
@@ -92,7 +98,7 @@ const HomePage = () => {
   const [scrolled, setScrolled] = useState(false);
   const searchRef = useRef(null);
 
-  useScrollReveal([iceCreams, categories]);
+  useScrollReveal([iceCreams, categories, flavours]);
 
   /* ── Fetch user ── */
   useEffect(() => {
@@ -115,11 +121,11 @@ const HomePage = () => {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  /* ── Reset page on filter change ── */
+  /* ── Reset page on filter/search/sort change ── */
   useEffect(() => {
     setPage(1);
     setIceCreams([]);
-  }, [activeCategory, debouncedSearch, sortBy]);
+  }, [selectedCategory, selectedFlavour, debouncedSearch, sortBy]);
 
   /* ── Fetch user & cart count ── */
   useEffect(() => {
@@ -141,7 +147,21 @@ const HomePage = () => {
       .finally(() => setCatLoading(false));
   }, []);
 
-  /* ── Fetch ice creams ── */
+  /* ── Fetch flavours: all featured OR filtered by category ── */
+  useEffect(() => {
+    setSelectedFlavour(null);
+    setFlavourLoading(true);
+    const url = selectedCategory
+      ? `/flavours?categoryId=${selectedCategory._id}&limit=20`
+      : "/flavours?limit=20&sort=-createdAt";
+    api
+      .get(url)
+      .then((r) => setFlavours(r.data.data || []))
+      .catch(() => setFlavours([]))
+      .finally(() => setFlavourLoading(false));
+  }, [selectedCategory]);
+
+  /* ── Fetch ice creams: all top-rated OR filtered by flavour/search/sort ── */
   const fetchIceCreams = useCallback(
     async (pageNum = 1, append = false) => {
       if (pageNum === 1) setIcLoading(true);
@@ -154,10 +174,7 @@ const HomePage = () => {
           sort: sortBy,
         });
         if (debouncedSearch) params.set("search", debouncedSearch);
-
-        // If a category is selected, find its flavours first
-        // For simplicity we filter by search + sort; category filter via flavourId
-        // would need a join — so we filter client-side by flavour category name if needed
+        if (selectedFlavour) params.set("flavourId", selectedFlavour._id);
 
         const res = await api.get(`/ice-creams?${params}`);
         const data = res.data.data || [];
@@ -170,7 +187,7 @@ const HomePage = () => {
         setLoadingMore(false);
       }
     },
-    [debouncedSearch, sortBy],
+    [debouncedSearch, sortBy, selectedFlavour],
   );
 
   useEffect(() => {
@@ -182,6 +199,40 @@ const HomePage = () => {
     const next = page + 1;
     setPage(next);
     fetchIceCreams(next, true);
+  };
+
+  /* ── Category click ── */
+  const handleCategoryClick = (cat) => {
+    if (selectedCategory?._id === cat._id) {
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(cat);
+      setTimeout(
+        () =>
+          flavoursRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          }),
+        100,
+      );
+    }
+  };
+
+  /* ── Flavour click ── */
+  const handleFlavourClick = (fl) => {
+    if (selectedFlavour?._id === fl._id) {
+      setSelectedFlavour(null);
+    } else {
+      setSelectedFlavour(fl);
+      setTimeout(
+        () =>
+          iceCreamsRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          }),
+        100,
+      );
+    }
   };
 
   /* ── Add to cart ── */
@@ -231,19 +282,8 @@ const HomePage = () => {
 
   const greeting = getGreeting();
 
-  // Filter displayed ice creams by active category (client side on loaded data)
-  const displayedIceCreams =
-    activeCategory === "all"
-      ? iceCreams
-      : iceCreams.filter((ic) =>
-          ic.flavourId?.name
-            ?.toLowerCase()
-            .includes(
-              categories
-                .find((c) => c._id === activeCategory)
-                ?.name?.toLowerCase() || "",
-            ),
-        );
+  // All filtering is done server-side via the API
+  const displayedIceCreams = iceCreams;
 
   return (
     <div className="hp-page">
@@ -442,9 +482,24 @@ const HomePage = () => {
         <section className="hp-section">
           <div className="hp-section-head hp-reveal">
             <div>
-              <h2 className="hp-section-title">Browse by Category</h2>
-              <p className="hp-section-sub">Find your flavour family</p>
+              <h2 className="hp-section-title">
+                Step 1 — Browse by Category 🍧
+              </h2>
+              <p className="hp-section-sub">
+                {selectedCategory
+                  ? `Showing flavours under "${selectedCategory.name}" — click again to clear`
+                  : "Click a category to filter flavours below"}
+              </p>
             </div>
+            {selectedCategory && (
+              <button
+                className="hp-cat-pill"
+                onClick={() => setSelectedCategory(null)}
+                style={{ flexShrink: 0 }}
+              >
+                ✕ Clear: {selectedCategory.name}
+              </button>
+            )}
           </div>
 
           {catLoading ? (
@@ -457,18 +512,11 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="hp-cats-scroll">
-              <button
-                className={`hp-cat-pill${activeCategory === "all" ? " hp-cat-pill--active" : ""}`}
-                onClick={() => setActiveCategory("all")}
-              >
-                <span className="hp-cat-pill-icon">🍨</span>
-                All
-              </button>
               {categories.map((cat) => (
                 <button
                   key={cat._id}
-                  className={`hp-cat-pill${activeCategory === cat._id ? " hp-cat-pill--active" : ""}`}
-                  onClick={() => setActiveCategory(cat._id)}
+                  className={`hp-cat-pill${selectedCategory?._id === cat._id ? " hp-cat-pill--active" : ""}`}
+                  onClick={() => handleCategoryClick(cat)}
                 >
                   {cat.imageUrl ? (
                     <img
@@ -489,19 +537,95 @@ const HomePage = () => {
           )}
         </section>
 
+        {/* ════════ FLAVOURS ════════ */}
+        <section className="hp-section" ref={flavoursRef}>
+          <div className="hp-section-head hp-reveal">
+            <div>
+              <h2 className="hp-section-title">
+                {selectedCategory
+                  ? `Step 2 — ${selectedCategory.name} Flavours 🍨`
+                  : "Step 2 — Explore Flavours 🍨"}
+              </h2>
+              <p className="hp-section-sub">
+                {selectedCategory
+                  ? `Showing flavours under "${selectedCategory.name}". Click one to see its ice creams.`
+                  : "Click a category above to filter, or browse all flavours below."}
+              </p>
+            </div>
+            {selectedFlavour && (
+              <button
+                className="hp-cat-pill"
+                onClick={() => setSelectedFlavour(null)}
+                style={{ flexShrink: 0 }}
+              >
+                ✕ Clear: {selectedFlavour.name}
+              </button>
+            )}
+          </div>
+
+          {flavourLoading ? (
+            <div className="hp-skeleton-row">
+              {Array(6)
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i} className="hp-skeleton hp-skeleton-cat" />
+                ))}
+            </div>
+          ) : flavours.length === 0 ? (
+            <p className="hp-section-sub" style={{ padding: "0 0 8px" }}>
+              No flavours found
+              {selectedCategory ? ` for "${selectedCategory.name}"` : ""}.
+            </p>
+          ) : (
+            <div className="hp-cats-scroll">
+              {flavours.map((fl) => (
+                <button
+                  key={fl._id}
+                  className={`hp-cat-pill${selectedFlavour?._id === fl._id ? " hp-cat-pill--active" : ""}`}
+                  onClick={() => handleFlavourClick(fl)}
+                >
+                  {fl.imageUrl ? (
+                    <img
+                      src={imgSrc(fl.imageUrl)}
+                      alt={fl.name}
+                      className="hp-cat-pill-img"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <span className="hp-cat-pill-icon">🍨</span>
+                  )}
+                  {fl.name}
+                  {fl.isSeasonal && (
+                    <span style={{ fontSize: "0.7rem", opacity: 0.7 }}>
+                      {" "}
+                      🌸
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* ════════ ICE CREAM GRID ════════ */}
-        <section className="hp-section hp-section--products">
+        <section className="hp-section hp-section--products" ref={iceCreamsRef}>
           <div className="hp-section-head hp-reveal">
             <div>
               <h2 className="hp-section-title">
                 {debouncedSearch
                   ? `Results for "${debouncedSearch}"`
-                  : "Our Flavours"}
+                  : selectedFlavour
+                    ? `Step 3 — ${selectedFlavour.name} Ice Creams 🏆`
+                    : "Step 3 — Our Ice Creams 🏆"}
               </h2>
               <p className="hp-section-sub">
                 {icLoading
                   ? "Finding the best scoops..."
-                  : `${iceCreams.length} flavours available`}
+                  : selectedFlavour
+                    ? `Showing ice creams with the "${selectedFlavour.name}" flavour.`
+                    : `${iceCreams.length} ice creams available`}
               </p>
             </div>
 
@@ -542,7 +666,8 @@ const HomePage = () => {
                 className="hp-empty-reset"
                 onClick={() => {
                   setSearchQuery("");
-                  setActiveCategory("all");
+                  setSelectedCategory(null);
+                  setSelectedFlavour(null);
                 }}
               >
                 Clear filters
@@ -725,7 +850,10 @@ const HomePage = () => {
         {/* ════════ QUICK LINKS ════════ */}
         <section className="hp-section hp-quick-section hp-reveal">
           <div className="hp-quick-grid">
-            <Link to="/customer/orders" className="hp-quick-card hp-quick-card--orders">
+            <Link
+              to="/customer/orders"
+              className="hp-quick-card hp-quick-card--orders"
+            >
               <span className="hp-quick-icon">📦</span>
               <div className="hp-quick-text">
                 <strong>My Orders</strong>
@@ -766,7 +894,10 @@ const HomePage = () => {
               </svg>
             </Link>
 
-            <Link to="/customer/cart" className="hp-quick-card hp-quick-card--cart">
+            <Link
+              to="/customer/cart"
+              className="hp-quick-card hp-quick-card--cart"
+            >
               <span className="hp-quick-icon">🛒</span>
               <div className="hp-quick-text">
                 <strong>My Cart</strong>
@@ -828,6 +959,9 @@ const HomePage = () => {
             <a href="#top">Home</a>
             <Link to="/customer/orders">Orders</Link>
             <Link to="/customer/cart">Cart</Link>
+            <Link to="/customer/become-delivery-partner">
+              Become a Delivery Partner
+            </Link>
           </div>
         </div>
       </footer>

@@ -14,6 +14,121 @@ const fmtDate = (iso) =>
       })
     : "—";
 
+/* ── Document Viewer Modal ── */
+const DocViewer = ({ label, url, onClose }) => {
+  const isPdf = url?.toLowerCase().endsWith(".pdf");
+  return (
+    <div
+      className="ap-modal-overlay"
+      onClick={onClose}
+      style={{ zIndex: 1100 }}
+    >
+      <div
+        className="ap-modal"
+        style={{ maxWidth: 780, width: "95vw" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="ap-modal-strip" />
+        <div className="ap-modal-inner">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "var(--ff-mono)",
+                fontSize: "0.72rem",
+                color: "var(--a-text3)",
+                letterSpacing: 1,
+              }}
+            >
+              // {label.toUpperCase()}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="ap-btn ap-btn--ghost ap-btn--sm"
+                style={{ textDecoration: "none" }}
+              >
+                ↗ Open
+              </a>
+              <button
+                className="ap-btn ap-btn--ghost ap-btn--sm"
+                onClick={onClose}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <div
+            style={{
+              borderRadius: 10,
+              overflow: "hidden",
+              border: "1px solid var(--a-border)",
+              background: "var(--a-bg3)",
+              minHeight: 320,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {isPdf ? (
+              <iframe
+                src={url}
+                title={label}
+                style={{ width: "100%", height: "60vh", border: "none" }}
+              />
+            ) : (
+              <img
+                src={url}
+                alt={label}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "60vh",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  e.target.nextSibling.style.display = "flex";
+                }}
+              />
+            )}
+            <div
+              style={{
+                display: "none",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--a-text3)",
+                fontSize: "0.85rem",
+              }}
+            >
+              <span style={{ fontSize: "2rem" }}>📄</span>
+              <span>Could not preview this file.</span>
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="ap-btn ap-btn--ghost ap-btn--sm"
+                style={{ textDecoration: "none" }}
+              >
+                Open in new tab ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const STATUS_BADGE = {
   pending: "yellow",
   active: "green",
@@ -41,6 +156,7 @@ const DeliveryDetail = ({ person, onClose, onAction }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
+  const [docViewer, setDocViewer] = useState(null); // { label, url }
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -107,6 +223,13 @@ const DeliveryDetail = ({ person, onClose, onAction }) => {
 
   return (
     <div className="ap-modal-overlay" onClick={onClose}>
+      {docViewer && (
+        <DocViewer
+          label={docViewer.label}
+          url={docViewer.url}
+          onClose={() => setDocViewer(null)}
+        />
+      )}
       {toast && (
         <div className={`ap-toast ap-toast--${toast.type}`}>{toast.msg}</div>
       )}
@@ -263,18 +386,47 @@ const DeliveryDetail = ({ person, onClose, onAction }) => {
                     ["Vehicle Reg.", person.vehicleRegistrationUrl],
                   ]
                     .filter(([, url]) => url)
-                    .map(([label, url]) => (
-                      <a
-                        key={label}
-                        href={`${import.meta.env.VITE_IMG_URL}/${url?.replace(/\\/g, "/")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="ap-btn ap-btn--ghost ap-btn--sm"
-                        style={{ textDecoration: "none" }}
-                      >
-                        📄 {label}
-                      </a>
-                    ))}
+                    .map(([label, url]) => {
+                      const fullUrl = `${import.meta.env.VITE_IMG_URL}/${url?.replace(/\\/g, "/")}`;
+                      const isPdf = url?.toLowerCase().endsWith(".pdf");
+                      return (
+                        <button
+                          key={label}
+                          className="ap-btn ap-btn--ghost ap-btn--sm"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "6px 12px",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setDocViewer({ label, url: fullUrl })}
+                        >
+                          <span>{isPdf ? "📄" : "🖼️"}</span>
+                          <span>{label}</span>
+                          <span
+                            style={{
+                              fontSize: "0.65rem",
+                              color: "var(--a-text4)",
+                              fontFamily: "var(--ff-mono)",
+                            }}
+                          >
+                            {isPdf ? "PDF" : "IMG"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  {![
+                    person.govtIdUrl,
+                    person.drivingLicenseUrl,
+                    person.vehicleRegistrationUrl,
+                  ].some(Boolean) && (
+                    <span
+                      style={{ fontSize: "0.8rem", color: "var(--a-text4)" }}
+                    >
+                      No documents uploaded.
+                    </span>
+                  )}
                 </div>
               </div>
 

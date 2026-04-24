@@ -95,15 +95,40 @@ export const getMyPayouts = catchAsync(async (req, res, next) => {
 });
 
 export const getAllPayouts = catchAsync(async (req, res, next) => {
-  // FIX: populate deliveryPersonId so the frontend gets fullname & phone
   const payouts = await DailyPayout.find()
-    .populate("deliveryPersonId", "fullname phone")
+    .populate("deliveryPersonId", "fullname phone bankDetails")
     .sort({ createdAt: -1 });
+
+  const data = payouts.map((p) => {
+    // Decrypt bank details BEFORE toObject() strips Mongoose methods
+    let bankDetails = null;
+    if (
+      p.payoutStatus === "failed" &&
+      p.deliveryPersonId?.getDecryptedBankDetails
+    ) {
+      const b = p.deliveryPersonId.getDecryptedBankDetails();
+      bankDetails = {
+        bankName: b.bankName,
+        accountNumber: b.accountNumber,
+        upiId: b.upiId,
+      };
+    }
+
+    const obj = p.toObject();
+
+    if (bankDetails) {
+      obj.deliveryPersonId.bankDetails = bankDetails;
+    } else if (obj.deliveryPersonId) {
+      delete obj.deliveryPersonId.bankDetails;
+    }
+
+    return obj;
+  });
 
   res.status(200).json({
     success: true,
-    count: payouts.length,
-    data: payouts,
+    count: data.length,
+    data,
   });
 });
 

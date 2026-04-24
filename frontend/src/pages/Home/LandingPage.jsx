@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
 import "./LandingPage.css";
 
 /* ─── helpers ─────────────────────────────────── */
 const BASE_URL = import.meta.env.VITE_IMG_URL;
-
 const imgSrc = (url) => (url ? `${BASE_URL}/${url.replace(/\\/g, "/")}` : null);
 
 const StarRating = ({ rating = 0 }) => {
@@ -54,7 +53,6 @@ const WHY_US = [
   },
 ];
 
-/* ─── Sprinkles config ────────────────────────── */
 const SPRINKLES = [
   { w: 6, h: 22, bg: "#f06292", top: "18%", left: "4%", dur: "7s", rot: 0 },
   { w: 5, h: 18, bg: "#ffe082", top: "30%", right: "3%", dur: "9s", rot: 45 },
@@ -76,13 +74,25 @@ const SPRINKLES = [
    MAIN COMPONENT
 ══════════════════════════════════════════════════ */
 const LandingPage = () => {
+  /* ── categories ── */
   const [categories, setCategories] = useState([]);
-  const [iceCreams, setIceCreams] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [catLoading, setCatLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState(null); // {_id, name}
+
+  /* ── flavours ── */
+  const [flavours, setFlavours] = useState([]); // all 8 featured (default)
+  const [flLoading, setFlLoading] = useState(true);
+  const [selectedFlavour, setSelectedFlavour] = useState(null); // {_id, name}
+
+  /* ── ice creams ── */
+  const [iceCreams, setIceCreams] = useState([]);
   const [icLoading, setIcLoading] = useState(true);
+
+  /* ── reviews ── */
+  const [reviews, setReviews] = useState([]);
   const [revLoading, setRevLoading] = useState(true);
 
+  /* ── contact ── */
   const [contact, setContact] = useState({
     username: "",
     email: "",
@@ -93,8 +103,13 @@ const LandingPage = () => {
   const [contactError, setContactError] = useState("");
   const [contactSuccess, setContactSuccess] = useState("");
 
+  /* ── section refs for smooth scroll ── */
+  const flavoursRef = useRef(null);
+  const iceCreamsRef = useRef(null);
+
+  /* ── scroll reveal ── */
   useEffect(() => {
-    if (catLoading || icLoading || revLoading) return; // wait for data
+    if (catLoading || flLoading || icLoading || revLoading) return;
     const observer = new IntersectionObserver(
       (entries) =>
         entries.forEach((e) =>
@@ -106,9 +121,9 @@ const LandingPage = () => {
       .querySelectorAll(".fd-reveal")
       .forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [catLoading, icLoading, revLoading]);
+  }, [catLoading, flLoading, icLoading, revLoading]);
 
-  /* ── Fetch categories ── */
+  /* ── Fetch categories (once) ── */
   useEffect(() => {
     api
       .get("/categories?limit=8")
@@ -117,24 +132,54 @@ const LandingPage = () => {
       .finally(() => setCatLoading(false));
   }, []);
 
-  /* ── Fetch featured ice creams ── */
+  /* ── Fetch flavours: all featured OR filtered by category ── */
   useEffect(() => {
+    setFlLoading(true);
+    setSelectedFlavour(null); // reset flavour selection when category changes
+    const url = selectedCategory
+      ? `/flavours?categoryId=${selectedCategory._id}&limit=8`
+      : "/flavours?limit=8&sort=-createdAt";
     api
-      .get("/ice-creams?limit=8&sort=-averageRating")
+      .get(url)
+      .then((r) => setFlavours(r.data.data || []))
+      .catch(() => setFlavours([]))
+      .finally(() => setFlLoading(false));
+  }, [selectedCategory]);
+
+  /* ── Fetch ice creams: all top-rated OR filtered by flavour ── */
+  useEffect(() => {
+    setIcLoading(true);
+    const url = selectedFlavour
+      ? `/ice-creams?flavourId=${selectedFlavour._id}&limit=8&sort=-averageRating`
+      : "/ice-creams?limit=8&sort=-averageRating";
+    api
+      .get(url)
       .then((r) => setIceCreams(r.data.data || []))
       .catch(() => setIceCreams([]))
       .finally(() => setIcLoading(false));
-  }, []);
+  }, [selectedFlavour]);
 
-  /* ── Fetch reviews (from a popular item if available) ── */
+  /* ── Fetch reviews ── */
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const icRes = await api.get("/ice-creams?limit=1&sort=-averageRating");
+        const icRes = await api.get("/ice-creams?limit=6&sort=-averageRating");
         const items = icRes.data.data || [];
         if (items.length) {
-          const revRes = await api.get(`/reviews/${items[0]._id}?limit=6`);
-          setReviews((revRes.data.data || []).slice(0, 6));
+          const reviewArrays = await Promise.all(
+            items.map((ic) =>
+              api
+                .get(`/reviews/${ic._id}`)
+                .then((r) => r.data.data || [])
+                .catch(() => []),
+            ),
+          );
+          // Pick the first review from each ice cream, flatten, take up to 6
+          const combined = reviewArrays
+            .map((arr) => arr[0])
+            .filter(Boolean)
+            .slice(0, 6);
+          setReviews(combined);
         }
       } catch {
         setReviews([]);
@@ -145,7 +190,40 @@ const LandingPage = () => {
     fetchReviews();
   }, []);
 
-  /* ── Contact submit ── */
+  /* ── Handlers ── */
+  const handleCategoryClick = (cat) => {
+    if (selectedCategory?._id === cat._id) {
+      // clicking the same category deselects
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(cat);
+      setTimeout(
+        () =>
+          flavoursRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          }),
+        100,
+      );
+    }
+  };
+
+  const handleFlavourClick = (fl) => {
+    if (selectedFlavour?._id === fl._id) {
+      setSelectedFlavour(null);
+    } else {
+      setSelectedFlavour(fl);
+      setTimeout(
+        () =>
+          iceCreamsRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          }),
+        100,
+      );
+    }
+  };
+
   const handleContactChange = (e) =>
     setContact((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -168,7 +246,6 @@ const LandingPage = () => {
     }
   };
 
-  /* ── Helpers ── */
   const getMinPrice = (variants = []) => {
     const prices = variants
       .filter((v) => v.isAvailable)
@@ -184,13 +261,15 @@ const LandingPage = () => {
           <span className="fd-nav-logo-icon">🍦</span>
           <span className="fd-nav-logo-text">FrozenDelights</span>
         </a>
-
         <ul className="fd-nav-links">
           <li>
             <a href="#categories">Categories</a>
           </li>
           <li>
             <a href="#flavours">Flavours</a>
+          </li>
+          <li>
+            <a href="#ice-creams">Ice Creams</a>
           </li>
           <li>
             <a href="#why-us">Why Us</a>
@@ -202,9 +281,8 @@ const LandingPage = () => {
             <a href="#contact">Contact</a>
           </li>
         </ul>
-
         <div className="fd-nav-actions">
-          <a href="#flavours" className="fd-nav-cart-btn">
+          <a href="#ice-creams" className="fd-nav-cart-btn">
             🛒 Order Now
           </a>
           <Link to="/login" className="fd-nav-btn fd-nav-btn-outline">
@@ -218,12 +296,9 @@ const LandingPage = () => {
 
       {/* ════════ HERO ════════ */}
       <section id="hero" className="fd-hero">
-        {/* blobs */}
         <div className="fd-hero-blob fd-hero-blob-1" />
         <div className="fd-hero-blob fd-hero-blob-2" />
         <div className="fd-hero-blob fd-hero-blob-3" />
-
-        {/* sprinkles */}
         {SPRINKLES.map((s, i) => (
           <div
             key={i}
@@ -240,26 +315,20 @@ const LandingPage = () => {
             }}
           />
         ))}
-
         <div className="fd-hero-inner">
-          {/* left */}
           <div className="fd-hero-content">
             <div className="fd-hero-badge">
               <div className="fd-hero-badge-dot" />
               Now delivering in your city!
             </div>
-
             <h1 className="fd-hero-title">
-              Life is Sweet,
-              <span>Scoop it Up!</span>
+              Life is Sweet,<span>Scoop it Up!</span>
             </h1>
-
             <p className="fd-hero-subtitle">
               Handcrafted ice creams made from the freshest ingredients. Over
               100+ flavours, fast delivery, and smiles guaranteed — every single
               scoop.
             </p>
-
             <div className="fd-hero-actions">
               <a href="#flavours" className="fd-btn-primary">
                 🍨 Explore Flavours
@@ -268,7 +337,6 @@ const LandingPage = () => {
                 ✨ Why We're Different
               </a>
             </div>
-
             <div className="fd-hero-stats">
               <div className="fd-hero-stat">
                 <span className="fd-hero-stat-num">100+</span>
@@ -286,14 +354,11 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-
-          {/* right visual */}
           <div className="fd-hero-visual">
             <div className="fd-hero-cone-wrap">
               <div className="fd-hero-cone-ring fd-hero-cone-ring-1" />
               <div className="fd-hero-cone-ring fd-hero-cone-ring-2" />
               <span className="fd-hero-cone-emoji">🍦</span>
-
               <div className="fd-hero-float-tag fd-hero-float-tag-1">
                 ⭐ 4.9 Rating
               </div>
@@ -324,11 +389,12 @@ const LandingPage = () => {
       <div className="fd-categories-bg">
         <section id="categories" className="fd-section">
           <div className="fd-section-header fd-reveal">
-            <span className="fd-section-label">Browse by Category</span>
+            <span className="fd-section-label">
+              Step 1 — Browse by Category
+            </span>
             <h2 className="fd-section-title">Find Your Favourite 🍧</h2>
             <p className="fd-section-subtitle">
-              From classic scoops to exotic seasonal surprises — there's
-              something for every craving.
+              Click a category to explore its flavours.
             </p>
           </div>
 
@@ -343,70 +409,236 @@ const LandingPage = () => {
               <p className="fd-empty-text">No categories found yet!</p>
             </div>
           ) : (
-            <div className="fd-categories-grid">
-              {categories.map((cat, i) => (
-                <a
-                  key={cat._id}
-                  href="#flavours"
-                  className="fd-cat-card fd-reveal"
-                  style={{ transitionDelay: `${i * 0.06}s` }}
-                >
-                  <div className="fd-cat-img-wrap">
-                    {imgSrc(cat.imageUrl) ? (
-                      <img
-                        src={imgSrc(cat.imageUrl)}
-                        alt={cat.name}
-                        className="fd-cat-img"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.parentNode.querySelector(
-                            ".fd-cat-placeholder",
-                          ).style.display = "flex";
+            <>
+              {selectedCategory && (
+                <div style={{ textAlign: "center", marginBottom: 12 }}>
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    style={{
+                      background: "none",
+                      border: "1px solid #ccc",
+                      borderRadius: 20,
+                      padding: "4px 14px",
+                      cursor: "pointer",
+                      fontSize: "0.82rem",
+                      color: "#888",
+                    }}
+                  >
+                    ✕ Clear: {selectedCategory.name}
+                  </button>
+                </div>
+              )}
+              <div className="fd-categories-grid">
+                {categories.map((cat, i) => (
+                  <div
+                    key={cat._id}
+                    className={`fd-cat-card fd-reveal${selectedCategory?._id === cat._id ? " fd-cat-card--active" : ""}`}
+                    style={{
+                      transitionDelay: `${i * 0.06}s`,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => handleCategoryClick(cat)}
+                  >
+                    <div className="fd-cat-img-wrap">
+                      {imgSrc(cat.imageUrl) ? (
+                        <img
+                          src={imgSrc(cat.imageUrl)}
+                          alt={cat.name}
+                          className="fd-cat-img"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentNode.querySelector(
+                              ".fd-cat-placeholder",
+                            ).style.display = "flex";
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="fd-cat-placeholder"
+                        style={{
+                          display: imgSrc(cat.imageUrl) ? "none" : "flex",
                         }}
-                      />
-                    ) : null}
-                    <div
-                      className="fd-cat-placeholder"
-                      style={{
-                        display: imgSrc(cat.imageUrl) ? "none" : "flex",
-                      }}
-                    >
-                      🍨
+                      >
+                        🍨
+                      </div>
                     </div>
+                    <div className="fd-cat-name">{cat.name}</div>
+                    {cat.description && (
+                      <div className="fd-cat-desc">{cat.description}</div>
+                    )}
+                    {selectedCategory?._id === cat._id && (
+                      <div
+                        style={{
+                          fontSize: "0.72rem",
+                          color: "var(--primary, #e91e63)",
+                          marginTop: 4,
+                          fontWeight: 600,
+                        }}
+                      >
+                        ✓ Selected
+                      </div>
+                    )}
                   </div>
-                  <div className="fd-cat-name">{cat.name}</div>
-                  {cat.description && (
-                    <div className="fd-cat-desc">{cat.description}</div>
-                  )}
-                </a>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </section>
       </div>
 
-      {/* ════════ FEATURED ICE CREAMS ════════ */}
-      <div className="fd-products-bg">
+      {/* ════════ FLAVOURS ════════ */}
+      <div className="fd-products-bg" ref={flavoursRef}>
         <section id="flavours" className="fd-section">
           <div className="fd-section-header fd-reveal">
-            <span className="fd-section-label">Top Picks</span>
-            <h2 className="fd-section-title">Fan Favourite Flavours 🏆</h2>
+            <span className="fd-section-label">Step 2 — Pick a Flavour</span>
+            <h2 className="fd-section-title">
+              {selectedCategory
+                ? `${selectedCategory.name} Flavours 🍨`
+                : "Explore Flavours 🍨"}
+            </h2>
             <p className="fd-section-subtitle">
-              Our highest-rated, most-loved ice creams — picked by thousands of
-              happy customers.
+              {selectedCategory
+                ? `Showing flavours under "${selectedCategory.name}". Click one to see its ice creams.`
+                : "Click a category above to filter, or browse all featured flavours below."}
+            </p>
+          </div>
+
+          {flLoading ? (
+            <div className="fd-loading-wrap">
+              <div className="fd-spinner" />
+              <p className="fd-loading-text">Loading flavours...</p>
+            </div>
+          ) : flavours.length === 0 ? (
+            <div className="fd-empty-state">
+              <span className="fd-empty-icon">🍨</span>
+              <p className="fd-empty-text">
+                No flavours found
+                {selectedCategory ? ` for "${selectedCategory.name}"` : ""}!
+              </p>
+            </div>
+          ) : (
+            <>
+              {selectedFlavour && (
+                <div style={{ textAlign: "center", marginBottom: 12 }}>
+                  <button
+                    onClick={() => setSelectedFlavour(null)}
+                    style={{
+                      background: "none",
+                      border: "1px solid #ccc",
+                      borderRadius: 20,
+                      padding: "4px 14px",
+                      cursor: "pointer",
+                      fontSize: "0.82rem",
+                      color: "#888",
+                    }}
+                  >
+                    ✕ Clear: {selectedFlavour.name}
+                  </button>
+                </div>
+              )}
+              <div className="fd-categories-grid">
+                {flavours.map((fl, i) => (
+                  <div
+                    key={fl._id}
+                    className={`fd-cat-card fd-reveal${selectedFlavour?._id === fl._id ? " fd-cat-card--active" : ""}`}
+                    style={{
+                      transitionDelay: `${i * 0.06}s`,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => handleFlavourClick(fl)}
+                  >
+                    <div className="fd-cat-img-wrap">
+                      {imgSrc(fl.imageUrl) ? (
+                        <img
+                          src={imgSrc(fl.imageUrl)}
+                          alt={fl.name}
+                          className="fd-cat-img"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentNode.querySelector(
+                              ".fd-cat-placeholder",
+                            ).style.display = "flex";
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="fd-cat-placeholder"
+                        style={{
+                          display: imgSrc(fl.imageUrl) ? "none" : "flex",
+                        }}
+                      >
+                        🍨
+                      </div>
+                    </div>
+                    <div className="fd-cat-name">
+                      {fl.name}
+                      {fl.isSeasonal && (
+                        <span
+                          style={{
+                            fontSize: "0.75rem",
+                            marginLeft: 6,
+                            opacity: 0.7,
+                          }}
+                        >
+                          🌸 Seasonal
+                        </span>
+                      )}
+                    </div>
+                    {selectedFlavour?._id === fl._id && (
+                      <div
+                        style={{
+                          fontSize: "0.72rem",
+                          color: "var(--primary, #e91e63)",
+                          marginTop: 4,
+                          fontWeight: 600,
+                        }}
+                      >
+                        ✓ Selected
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </div>
+
+      {/* ════════ ICE CREAMS ════════ */}
+      <div
+        className="fd-products-bg"
+        style={{ background: "var(--bg-section-alt, #fff8f0)" }}
+        ref={iceCreamsRef}
+      >
+        <section id="ice-creams" className="fd-section">
+          <div className="fd-section-header fd-reveal">
+            <span className="fd-section-label">
+              Step 3 — Choose Your Ice Cream
+            </span>
+            <h2 className="fd-section-title">
+              {selectedFlavour
+                ? `${selectedFlavour.name} Ice Creams 🏆`
+                : "Fan Favourite Ice Creams 🏆"}
+            </h2>
+            <p className="fd-section-subtitle">
+              {selectedFlavour
+                ? `Showing ice creams with the "${selectedFlavour.name}" flavour.`
+                : "Pick a flavour above to filter, or browse our top-rated picks."}
             </p>
           </div>
 
           {icLoading ? (
             <div className="fd-loading-wrap">
               <div className="fd-spinner" />
-              <p className="fd-loading-text">Scooping the best flavours...</p>
+              <p className="fd-loading-text">Scooping the best...</p>
             </div>
           ) : iceCreams.length === 0 ? (
             <div className="fd-empty-state">
               <span className="fd-empty-icon">🍦</span>
               <p className="fd-empty-text">
-                No ice creams listed yet — check back soon!
+                No ice creams found
+                {selectedFlavour ? ` for "${selectedFlavour.name}"` : ""} —
+                check back soon!
               </p>
             </div>
           ) : (
@@ -441,7 +673,6 @@ const LandingPage = () => {
                       >
                         🍦
                       </div>
-
                       {i < 3 && (
                         <div className="fd-product-badge">
                           {i === 0
@@ -451,14 +682,12 @@ const LandingPage = () => {
                               : "🥉 Fan Fave"}
                         </div>
                       )}
-
                       {ic.averageRating > 0 && (
                         <div className="fd-product-rating-badge">
                           ⭐ {ic.averageRating.toFixed(1)}
                         </div>
                       )}
                     </div>
-
                     <div className="fd-product-body">
                       {ic.flavourId?.name && (
                         <div className="fd-product-flavour">
@@ -466,7 +695,6 @@ const LandingPage = () => {
                         </div>
                       )}
                       <div className="fd-product-name">{ic.name}</div>
-
                       {ic.variants?.length > 0 && (
                         <div className="fd-product-variants">
                           {ic.variants
@@ -479,7 +707,6 @@ const LandingPage = () => {
                             ))}
                         </div>
                       )}
-
                       <div className="fd-product-footer">
                         <div className="fd-product-price">
                           {minPrice != null ? (
@@ -523,7 +750,6 @@ const LandingPage = () => {
               customer smile.
             </p>
           </div>
-
           <div className="fd-why-grid">
             {WHY_US.map((w, i) => (
               <div
@@ -551,7 +777,6 @@ const LandingPage = () => {
               more.
             </p>
           </div>
-
           {revLoading ? (
             <div className="fd-loading-wrap">
               <div className="fd-spinner" />
@@ -577,7 +802,6 @@ const LandingPage = () => {
                   <p className="fd-review-text">
                     {rev.description || "Absolutely loved it!"}
                   </p>
-
                   <div className="fd-review-footer">
                     <div className="fd-review-avatar">
                       {rev.userId?.profilePicUrl ? (
@@ -606,7 +830,6 @@ const LandingPage = () => {
       {/* ════════ CONTACT ════════ */}
       <div className="fd-contact-bg" id="contact">
         <div className="fd-contact-inner">
-          {/* left info */}
           <div className="fd-contact-info">
             <div
               className="fd-section-header"
@@ -622,7 +845,6 @@ const LandingPage = () => {
                 melts!
               </p>
             </div>
-
             <div className="fd-contact-icon-row">
               <div className="fd-contact-icon-box">📍</div>
               <div>
@@ -632,7 +854,6 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
-
             <div className="fd-contact-icon-row">
               <div className="fd-contact-icon-box">📞</div>
               <div>
@@ -640,7 +861,6 @@ const LandingPage = () => {
                 <div className="fd-contact-icon-value">+91 98765 43210</div>
               </div>
             </div>
-
             <div className="fd-contact-icon-row">
               <div className="fd-contact-icon-box">✉️</div>
               <div>
@@ -650,7 +870,6 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
-
             <div className="fd-contact-icon-row">
               <div className="fd-contact-icon-box">🕐</div>
               <div>
@@ -661,8 +880,6 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-
-          {/* right form */}
           <div className="fd-contact-form fd-reveal">
             <div
               className="fd-section-header"
@@ -678,7 +895,6 @@ const LandingPage = () => {
                 Send a Message 🍪
               </h3>
             </div>
-
             <form onSubmit={handleContactSubmit}>
               <div className="fd-form-row">
                 <div className="fd-form-group">
@@ -712,7 +928,6 @@ const LandingPage = () => {
                   />
                 </div>
               </div>
-
               <div className="fd-form-group">
                 <label className="fd-form-label" htmlFor="c-email">
                   Email
@@ -728,7 +943,6 @@ const LandingPage = () => {
                   required
                 />
               </div>
-
               <div className="fd-form-group">
                 <label className="fd-form-label" htmlFor="c-msg">
                   Message
@@ -743,14 +957,12 @@ const LandingPage = () => {
                   required
                 />
               </div>
-
               {contactError && (
                 <div className="fd-form-error">❌ {contactError}</div>
               )}
               {contactSuccess && (
                 <div className="fd-form-success">{contactSuccess}</div>
               )}
-
               <button
                 type="submit"
                 className="fd-form-submit"
@@ -769,7 +981,6 @@ const LandingPage = () => {
       <footer className="fd-footer">
         <div className="fd-footer-inner">
           <div className="fd-footer-top">
-            {/* brand */}
             <div>
               <a href="#hero" className="fd-footer-brand-logo">
                 <span style={{ fontSize: 24 }}>🍦</span>
@@ -789,8 +1000,6 @@ const LandingPage = () => {
                 ))}
               </div>
             </div>
-
-            {/* explore */}
             <div>
               <div className="fd-footer-col-title">Explore</div>
               <ul className="fd-footer-links">
@@ -801,6 +1010,9 @@ const LandingPage = () => {
                   <a href="#flavours">Flavours</a>
                 </li>
                 <li>
+                  <a href="#ice-creams">Ice Creams</a>
+                </li>
+                <li>
                   <a href="#why-us">Why Us</a>
                 </li>
                 <li>
@@ -808,8 +1020,6 @@ const LandingPage = () => {
                 </li>
               </ul>
             </div>
-
-            {/* account */}
             <div>
               <div className="fd-footer-col-title">Account</div>
               <ul className="fd-footer-links">
@@ -827,8 +1037,6 @@ const LandingPage = () => {
                 </li>
               </ul>
             </div>
-
-            {/* support */}
             <div>
               <div className="fd-footer-col-title">Support</div>
               <ul className="fd-footer-links">
@@ -847,7 +1055,6 @@ const LandingPage = () => {
               </ul>
             </div>
           </div>
-
           <div className="fd-footer-bottom">
             <p className="fd-footer-copy">
               © {new Date().getFullYear()} FrozenDelights. All rights reserved.

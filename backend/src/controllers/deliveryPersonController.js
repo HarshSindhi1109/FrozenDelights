@@ -244,7 +244,7 @@ export const getAllDeliveryPersons = catchAsync(async (req, res, next) => {
 
   const deliveryPersons = await DeliveryPerson.find()
     .select(
-      "fullname phone vehicleType averageRating totalReviews availability status suspension createdAt",
+      "fullname phone vehicleType averageRating totalReviews availability status suspension createdAt profilePicUrl govtIdUrl drivingLicenseUrl vehicleRegistrationUrl",
     )
     .populate("userId", "email role")
     .skip(skip)
