@@ -4,6 +4,7 @@ import AppError from "../utils/AppError.js";
 import User from "../models/User.js";
 import deleteUploadedFiles from "../utils/deleteUploadedFiles.js";
 import fs from "fs";
+import { sendDeliveryApprovalEmail } from "../services/emailService.js";
 
 /* --------------------------------------------------- */
 /* Helper: Delete old file safely */
@@ -267,7 +268,6 @@ export const getAllDeliveryPersons = catchAsync(async (req, res, next) => {
 /* --------------------------------------------------- */
 /* Approve */
 /* --------------------------------------------------- */
-
 export const approveDeliveryPerson = catchAsync(async (req, res, next) => {
   const deliveryPerson = await DeliveryPerson.findOneAndUpdate(
     { _id: req.params.id, status: "pending" },
@@ -279,9 +279,18 @@ export const approveDeliveryPerson = catchAsync(async (req, res, next) => {
     return next(new AppError("Pending delivery person not found", 404));
   }
 
-  await User.findByIdAndUpdate(deliveryPerson.userId, {
-    role: "delivery_man",
-  });
+  const user = await User.findByIdAndUpdate(
+    deliveryPerson.userId,
+    { role: "delivery_man" },
+    { new: true },
+  );
+
+  // Send approval email
+  if (user?.email) {
+    sendDeliveryApprovalEmail(user.email, deliveryPerson.fullname).catch(
+      (err) => console.error("Approval email failed:", err.message),
+    );
+  }
 
   res.status(200).json({
     success: true,
